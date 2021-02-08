@@ -49,17 +49,19 @@ function transactionsFromCSV(CSVResults) {
 // {"2020-01-01": { value: 100, total: 200, transactions: 3}, "2020-01-20":{...}}
 const transactionsPerPeriod = (transactions, period = 'day') => transactions.reduce((dates, current) => {
   const [year, month, day] = current.dateString.split('-')
-  let dateString = period === 'day' ? `${year}-${month}-${day}` : period === 'month' ? `${year}-${month}` : year
+  let periodDateString = period === 'day' ? `${year}-${month}-${day}` : period === 'month' ? `${year}-${month}` : year
   let previousPeriodKey = Object.keys(dates)[Object.keys(dates).length-1];
   let prevTotal = dates[previousPeriodKey]?.total || 0
 
-  if (dates[dateString]) {
-      dates[dateString].value += current.value
-      dates[dateString].total += current.value
-      dates[dateString].transactions++
+  if (dates[periodDateString]) {
+      dates[periodDateString].value += current.value
+      dates[periodDateString].total += current.value
+      dates[periodDateString].transactions++
   } else {
-      dates[dateString] = {
-        ...current,
+      dates[periodDateString] = {
+        date: current.date,
+        dateString: periodDateString,
+        timestamp: current.timestamp,
         value: current.value,
         total: current.value + prevTotal,
         transactions: current.value ? 1 : 0,
