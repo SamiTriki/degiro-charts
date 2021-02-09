@@ -1,13 +1,13 @@
 const REGEXES = {
-  deposit:    new RegExp(/^Deposit|Deposit$/),
-  withdrawal: new RegExp(/^Withdrawal|Withdrawal$/),
-  interest:   new RegExp(/^Money.Market.fund|^Fund.Distribution$/),
-  dividend:   new RegExp(/^Dividend$|^Capital.Return$/),
-  fx:         new RegExp(/^FX.Credit|Debit$/),
-  fee:        new RegExp(/Duty$|DEGIRO.*Fee|Reimbursement/),
+  deposit:    new RegExp(/^Deposit$/i),
+  withdrawal: new RegExp(/^Withdrawal$/i),
+  interest:   new RegExp(/^Money.Market.fund|^Fund.Distribution$/i),
+  dividend:   new RegExp(/^Dividend$|^Capital.Return$/i),
+  fx:         new RegExp(/^FX.Credit|Debit$/i),
+  fee:        new RegExp(/Duty$|DEGIRO.*Fee|Reimbursement/i),
   // Capturing shareCurrency as it can be different from transaction currency ex: GBP -> GBX
-  buy:        new RegExp(/^Buy.(\d*\.?\d+).*C?@(\d*\.?\d+).([A-Z]{3})/), // [shareCount, sharePrice, shareCurrency]
-  sell:       new RegExp(/^Sell.(\d*\.?\d+).*C?@(\d*\.?\d+).([A-Z]{3})/),// [shareCount, sharePrice, shareCurrency]
+  buy:        new RegExp(/^Buy.(\d*\.?\d+).*C?@(\d*\.?\d+).([A-Z]{3})/i), // [shareCount, sharePrice, shareCurrency]
+  sell:       new RegExp(/^Sell.(\d*\.?\d+).*C?@(\d*\.?\d+).([A-Z]{3})/i),// [shareCount, sharePrice, shareCurrency]
 }
 
 /**
@@ -21,30 +21,16 @@ function decorateTransactions(transactions = []) {
   const decorated = transactions.map(transaction => {
     const { description } = transaction;
 
-    if (REGEXES.deposit.test(description)) {
-      transaction.type = 'deposit'
-      return transaction
-    }
-    if (REGEXES.withdrawal.test(description)) {
-      transaction.type = 'withdrawal'
-      return transaction
-    }
-    if (REGEXES.interest.test(description)) {
-      transaction.type = 'interest'
-      return transaction
-    }
-    if (REGEXES.dividend.test(description)) {
-      transaction.type = 'dividend'
-      return transaction
-    }
-    if (REGEXES.fx.test(description)) {
-      transaction.type = 'fx'
-      return transaction
-    }
     if (REGEXES.fee.test(description)) {
       transaction.type = 'fee'
       return transaction
     }
+
+    if (REGEXES.fx.test(description)) {
+      transaction.type = 'fx'
+      return transaction
+    }
+
     if (REGEXES.buy.test(description)) {
       const [, shareCount, sharePrice, shareCurrency] = REGEXES.buy.exec(description)
       transaction.type = 'buy'
@@ -53,12 +39,33 @@ function decorateTransactions(transactions = []) {
       transaction.shareCurrency = shareCurrency
       return transaction
     }
+
     if (REGEXES.sell.test(description)) {
       const [, shareCount, sharePrice, shareCurrency] = REGEXES.sell.exec(description)
       transaction.type = 'sell'
       transaction.shareCount = shareCount
       transaction.sharePrice = sharePrice
       transaction.shareCurrency = shareCurrency
+      return transaction
+    }
+
+    if (REGEXES.dividend.test(description)) {
+      transaction.type = 'dividend'
+      return transaction
+    }
+
+    if (REGEXES.interest.test(description)) {
+      transaction.type = 'interest'
+      return transaction
+    }
+
+    if (REGEXES.deposit.test(description)) {
+      transaction.type = 'deposit'
+      return transaction
+    }
+
+    if (REGEXES.withdrawal.test(description)) {
+      transaction.type = 'withdrawal'
       return transaction
     }
 
