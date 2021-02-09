@@ -4,10 +4,10 @@ const REGEXES = {
   interest:   new RegExp(/^Money.Market.fund|^Fund.Distribution$/i),
   dividend:   new RegExp(/^Dividend$|^Capital.Return$/i),
   fx:         new RegExp(/^FX.Credit|Debit$/i),
-  fee:        new RegExp(/Duty$|DEGIRO.*Fee|Reimbursement/i),
+  fee:        new RegExp(/Stamp Duty$|DEGIRO.*Fee|Reimbursement/i),
   // Capturing shareCurrency as it can be different from transaction currency ex: GBP -> GBX
-  buy:        new RegExp(/^Buy.(\d*\.?\d+).*C?@(\d*\.?\d+).([A-Z]{3})/i), // [shareCount, sharePrice, shareCurrency]
-  sell:       new RegExp(/^Sell.(\d*\.?\d+).*C?@(\d*\.?\d+).([A-Z]{3})/i),// [shareCount, sharePrice, shareCurrency]
+  buy:        new RegExp(/^Buy.(\d*\.?\d+).*@(\d*\.?\d+).([A-Z]{3}\b)/i), // [shareCount, sharePrice, shareCurrency]
+  sell:       new RegExp(/^Sell.(\d*\.?\d+).*@(\d*\.?\d+).([A-Z]{3}\b)/i),// [shareCount, sharePrice, shareCurrency]
 }
 
 /**
@@ -15,12 +15,16 @@ const REGEXES = {
  description and other properties like orderID in order to be able to present transactions in
  a better way whether through the transaction list or chart
  TODO: separate decoration and CSV extraction. Keep csv extraction for cleaning up property names and adding dates functions
+ TODO: Make safe floating point operations using moneysafe
  Keep decorateTransactions for adding new properties from description and linking transactions together
 */
 function decorateTransactions(transactions = []) {
   const decorated = transactions.map(transaction => {
-    const { description } = transaction;
+    if (!transaction || !transaction.description) {
+      return transaction
+    }
 
+    const { description } = transaction;
     if (REGEXES.fee.test(description)) {
       transaction.type = 'fee'
       return transaction
@@ -34,8 +38,8 @@ function decorateTransactions(transactions = []) {
     if (REGEXES.buy.test(description)) {
       const [, shareCount, sharePrice, shareCurrency] = REGEXES.buy.exec(description)
       transaction.type = 'buy'
-      transaction.shareCount = shareCount
-      transaction.sharePrice = sharePrice
+      transaction.shareCount = parseFloat(shareCount)
+      transaction.sharePrice = parseFloat(sharePrice)
       transaction.shareCurrency = shareCurrency
       return transaction
     }
@@ -43,8 +47,8 @@ function decorateTransactions(transactions = []) {
     if (REGEXES.sell.test(description)) {
       const [, shareCount, sharePrice, shareCurrency] = REGEXES.sell.exec(description)
       transaction.type = 'sell'
-      transaction.shareCount = shareCount
-      transaction.sharePrice = sharePrice
+      transaction.shareCount = parseFloat(shareCount)
+      transaction.sharePrice = parseFloat(sharePrice)
       transaction.shareCurrency = shareCurrency
       return transaction
     }
