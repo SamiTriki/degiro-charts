@@ -11,19 +11,19 @@ function calculateTicksForChart(transactions, segmentsCount = 4) {
   const min = transactions[0].timestamp;
   const max = transactions[transactions.length-1].timestamp;
 
-	if (segmentsCount < 2) {
-		throw new Error('n should be an Int superior or equal to 2')
+  if (segmentsCount < 2) {
+    throw new Error('n should be an Int superior or equal to 2')
   }
 
-	// delta is a segment
-	let delta = (max-min)/segmentsCount
+  // delta is a segment
+  let delta = (max-min)/segmentsCount
 
   // find each ticks between the two values
-	let ticks = new Array(segmentsCount-1).fill().map((v, idx) => {
-		return min + (delta*(idx+1))
+  let ticks = new Array(segmentsCount-1).fill().map((v, idx) => {
+    return min + (delta*(idx+1))
   })
 
-	return [min, ...ticks, max].map(t => new Date(t))
+  return [min, ...ticks, max].map(t => new Date(t))
 }
 
 
