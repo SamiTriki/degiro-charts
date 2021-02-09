@@ -138,5 +138,4 @@ describe("Decorate transactions", () => {
     expect(oddTransactions[3]).toStrictEqual({description: null})
     expect(oddTransactions[4]).toStrictEqual({"":""})
   })
-  it("Formats the sample transaction object as expected", () => {})
 })
