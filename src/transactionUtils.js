@@ -6,8 +6,8 @@ const REGEXES = {
   fx:         new RegExp(/^FX.Credit|Debit$/),
   fee:        new RegExp(/Duty$|DEGIRO.*Fee|Reimbursement/),
   // Capturing shareCurrency as it can be different from transaction currency ex: GBP -> GBX
-  buy:        new RegExp(/^Buy.(\d*.?\d{1,}).*C?@(\d*.?\d{1,}).([A-Z]{3})/), // [shareCount, sharePrice, shareCurrency]
-  sell:       new RegExp(/^Sell.(\d*.?\d{1,}).*C?@(\d*.?\d{1,}).([A-Z]{3})/),// [shareCount, sharePrice, shareCurrency]
+  buy:        new RegExp(/^Buy.(\d*\.?\d+).*C?@(\d*\.?\d+).([A-Z]{3})/), // [shareCount, sharePrice, shareCurrency]
+  sell:       new RegExp(/^Sell.(\d*\.?\d+).*C?@(\d*\.?\d+).([A-Z]{3})/),// [shareCount, sharePrice, shareCurrency]
 }
 
 /**
