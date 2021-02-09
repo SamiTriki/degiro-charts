@@ -1,3 +1,4 @@
+import { decorateTransactions } from "./transactionUtils";
 
 // { Date: '20/10/2020', Time: '10:50'} => Date Object
 const csvTransactionToDate = (csvTransaction) => {
@@ -19,7 +20,7 @@ const csvDateToString = (date) => {
 }
 
 function transactionsFromCSV(CSVResults) {
-  return CSVResults
+  let transactions = CSVResults
     .filter(t => t)
     .filter(t => t.Date && t.Time)
     .map(transaction => {
@@ -42,6 +43,8 @@ function transactionsFromCSV(CSVResults) {
       }
     })
     .sort((a, b) => a.date.getTime() - b.date.getTime())
+
+    return decorateTransactions(transactions)
 }
 
 
