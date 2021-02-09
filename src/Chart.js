@@ -1,38 +1,51 @@
-import { formatDatesForChart } from './utils'
+import { transactionsPerPeriod } from './utils'
 import * as V from 'victory'
 
-function Chart({ transactions}) {
+/** calculates ticks to render on the x-axis, we just want to display
+ * an evenly spaced set of time ticks no matter the size of the dataset
+ * to prevent overcrowding.
+ * a segment is the line between two ticks
+ * https://math.stackexchange.com/questions/563566/how-do-i-find-the-middle1-2-1-3-1-4-etc-of-a-line
+ * */
+function calculateTicksForChart(transactions, segmentsCount = 4) {
+  const min = transactions[0].timestamp;
+  const max = transactions[transactions.length-1].timestamp;
 
+  if (segmentsCount < 2) {
+    throw new Error('n should be an Int superior or equal to 2')
+  }
+
+  // delta is a segment
+  let delta = (max-min)/segmentsCount
+
+  // find each ticks between the two values
+  let ticks = new Array(segmentsCount-1).fill().map((v, idx) => {
+    return min + (delta*(idx+1))
+  })
+
+  return [min, ...ticks, max].map(t => new Date(t))
+}
+
+
+function Chart({ transactions}) {
   if (!transactions.length) {
     return <p>Waiting for data to draw chart</p>
   }
-
-  const transactionsByDay = formatDatesForChart(transactions)
-
-  // inneficient change later
-  let formattedata = Object.keys(transactionsByDay)
-    .reduce((dates, current, idx) => {
-      if (transactionsByDay[current].change) { // only show change in portfolio value, update with show nil transactions
-        return [...dates, {
-          cumul: transactionsByDay[current].total,
-          change: transactionsByDay[current].change,
-          date: new Date(current).getTime()
-        }]
-      }
-      return dates
-    }, [])
-
+  const transactionsByDay = transactionsPerPeriod(transactions, 'day')
+  const transactionsByDayArray = Object.values(transactionsByDay)
+  const tickValues = calculateTicksForChart(transactionsByDayArray)
 
   return (
-    <V.VictoryChart padding={{top: 10, left: 30, bottom: 30}} theme={V.VictoryTheme.material}>
+    <V.VictoryChart padding={{top: 10, left: 30, bottom: 30, right: 10}} theme={V.VictoryTheme.material}>
       <V.VictoryAxis
         padding={0}
-        tickValues={formattedata.filter(d => d.change >= 10).map(d => new Date(d.date))}
-        tickFormat={formattedata.filter(d => d.change >= 10).map(day => {
-          let d = new Date(day.date);
-          let formattedDate = `${d.getMonth()+1}/${d.getFullYear().toString().substring(2, 4)}`;
-          return formattedDate
-        })}
+        tickValues={tickValues}
+        tickFormat={d => {
+          return d.toLocaleDateString("en-GB", {
+            year: "2-digit",
+            month: "2-digit",
+          })
+        }}
 
         style={{
           grid: {stroke: 0},
@@ -46,7 +59,7 @@ function Chart({ transactions}) {
         tickLabels: { fontSize: 5}
       }}/>
       <V.VictoryLine
-        data={formattedata}
+        data={transactionsByDayArray}
         style={{
           data: {
             stroke: "#009fdf",
@@ -57,8 +70,8 @@ function Chart({ transactions}) {
             fontSize: 10
           }
         }}
-        x="date"
-        y="cumul"
+        x="timestamp"
+        y="total"
       />
     </V.VictoryChart>
   )

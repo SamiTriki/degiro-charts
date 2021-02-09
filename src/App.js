@@ -1,7 +1,7 @@
 import './App.css';
 import { CSVReader, readString } from 'react-papaparse'
 import { useEffect, useState } from 'react'
-import { formatTransactions } from './utils'
+import { transactionsFromCSV } from './utils'
 import React from 'react';
 import Chart from './Chart'
 const papaConfig = { header: true}
@@ -38,7 +38,7 @@ function App() {
 
   const handleOnDrop = (results) => {
     setCsvParsingError(false)
-    setTransactions(formatTransactions(results.map(r => r.data)))
+    setTransactions(transactionsFromCSV(results.map(r => r.data)))
   }
 
   const handleOnError = (err) => {
@@ -50,7 +50,7 @@ function App() {
     async function setDefaultTransactions() {
       const csvString = await getLocalTransactions()
       const parsedTransactions = readString(csvString, papaConfig).data
-      setTransactions(formatTransactions(parsedTransactions))
+      setTransactions(transactionsFromCSV(parsedTransactions))
     }
 
     setDefaultTransactions()
@@ -152,3 +152,4 @@ function SignedAmount({value, currency}) {
   )
 }
 export default App;
+
