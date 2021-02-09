@@ -83,22 +83,50 @@ function decorateTransactions(transactions = []) {
 
  // Find interesting insights about transactions
  function getDashboardInfo(transactions = []) {
+  const significantValues = transactions.reduce((d, curr) => {
+    if (curr.type === 'buy') {
+      d.totalTrades++
+      d.totalSharesOnMarket = d.totalSharesOnMarket + curr.shareCount
+    }
 
-  return {
-    totalTrades: 0, // count sell/buy
-    totalReturns: 0, // P&L transactions.reduce((all, t) => all.val + t.val, 0)
+    if (curr.type === 'sell') {
+      d.totalTrades++
+      d.totalSharesOnMarket = d.totalSharesOnMarket - curr.shareCount
+    }
+
+    if (curr.type === 'fee') {
+      d.totalFees = d.totalFees + curr.value
+    }
+
+    if (curr.type === 'dividend') {
+      d.totalDividends = d.totalDividends + curr.value
+    }
+
+    if (curr.type === 'withdrawal') {
+      d.totalWithdrawals = d.totalWithdrawals + curr.value
+    }
+
+    if (curr.type === 'deposit') {
+      d.totalDeposits = d.totalDeposits + curr.value
+    }
+
+    d.realisedGains = d.realisedGains + curr.value
+
+    return d
+  },{
+    totalTrades: 0, // total of sell and buys
+    realisedGains: 0, // Cash balance
     totalFees: 0, // total fees value
     totalDividends: 0, // total dividend value, sort by stock?
-    totalWithdrawn: 0, // total withdrawal values
-    totalDeposited: 0,  // total deposit values
+    totalWithdrawals: 0, // total withdrawal values
+    totalDeposits: 0,  // total deposit values
     totalSharesOnMarket: 0, // totalbuys - totalsells
-    topStocks: ['ISIN / Ticker', 'ISIN / Ticker', '...'],
-    worstStocks: ['ISIN / Ticker', 'ISIN / Ticker', '...'],
-    biggestWin: 'orderID' // sell order w/ max positive value
-  }
+  })
+
+  return significantValues
  }
 
-export { decorateTransactions }
+export { decorateTransactions, getDashboardInfo }
 
 // function getStockInfos(tickerorisin, transactions) {
 
