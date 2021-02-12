@@ -80,53 +80,7 @@ function decorateTransactions(transactions = []) {
   return decorated
 }
 
-
- // Find interesting insights about transactions
- function getDashboardInfo(transactions = []) {
-  const significantValues = transactions.reduce((d, curr) => {
-    if (curr.type === 'buy') {
-      d.totalTrades++
-      d.totalSharesOnMarket = d.totalSharesOnMarket + curr.shareCount
-    }
-
-    if (curr.type === 'sell') {
-      d.totalTrades++
-      d.totalSharesOnMarket = d.totalSharesOnMarket - curr.shareCount
-    }
-
-    if (curr.type === 'fee') {
-      d.totalFees = d.totalFees + curr.value
-    }
-
-    if (curr.type === 'dividend') {
-      d.totalDividends = d.totalDividends + curr.value
-    }
-
-    if (curr.type === 'withdrawal') {
-      d.totalWithdrawals = d.totalWithdrawals + curr.value
-    }
-
-    if (curr.type === 'deposit') {
-      d.totalDeposits = d.totalDeposits + curr.value
-    }
-
-    d.realisedGains = d.realisedGains + curr.value
-
-    return d
-  },{
-    totalTrades: 0, // total of sell and buys
-    realisedGains: 0, // Cash balance
-    totalFees: 0, // total fees value
-    totalDividends: 0, // total dividend value, sort by stock?
-    totalWithdrawals: 0, // total withdrawal values
-    totalDeposits: 0,  // total deposit values
-    totalSharesOnMarket: 0, // totalbuys - totalsells
-  })
-
-  return significantValues
- }
-
-export { decorateTransactions, getDashboardInfo }
+export { decorateTransactions }
 
 // function getStockInfos(tickerorisin, transactions) {
 
