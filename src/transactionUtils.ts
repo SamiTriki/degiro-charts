@@ -10,6 +10,22 @@ const REGEXES = {
   sell:       new RegExp(/^Sell.(\d*\.?\d+).*@(\d*\.?\d+).([A-Z]{3}\b)/i),// [shareCount, sharePrice, shareCurrency]
 }
 
+export interface Transaction {
+  readonly currency?: string,
+  readonly value?: number,
+  readonly product?: string,
+  readonly description?: string,
+  readonly orderId?: string,
+  readonly fx?: number,
+  readonly isin?: string,
+  readonly date: Date,
+  readonly dateString: string,
+  readonly timestamp: number,
+  type?: string,
+  sharePrice?: number,
+  shareCount?: number,
+  shareCurrency?: string
+}
 /**
  we want to decorate transactions with augmented information that can be parsed from its
  description and other properties like orderID in order to be able to present transactions in
@@ -18,7 +34,7 @@ const REGEXES = {
  TODO: Make safe floating point operations using moneysafe
  Keep decorateTransactions for adding new properties from description and linking transactions together
 */
-function decorateTransactions(transactions = []) {
+function decorateTransactions(transactions: Transaction[] = []) : Transaction[] {
   const decorated = transactions.map(transaction => {
     if (!transaction || !transaction.description) {
       return transaction
@@ -36,7 +52,7 @@ function decorateTransactions(transactions = []) {
     }
 
     if (REGEXES.buy.test(description)) {
-      const [, shareCount, sharePrice, shareCurrency] = REGEXES.buy.exec(description)
+      const [, shareCount, sharePrice, shareCurrency] = REGEXES.buy.exec(description) || []
       transaction.type = 'buy'
       transaction.shareCount = parseFloat(shareCount)
       transaction.sharePrice = parseFloat(sharePrice)
@@ -45,7 +61,7 @@ function decorateTransactions(transactions = []) {
     }
 
     if (REGEXES.sell.test(description)) {
-      const [, shareCount, sharePrice, shareCurrency] = REGEXES.sell.exec(description)
+      const [, shareCount, sharePrice, shareCurrency] = REGEXES.sell.exec(description) || []
       transaction.type = 'sell'
       transaction.shareCount = parseFloat(shareCount)
       transaction.sharePrice = parseFloat(sharePrice)
@@ -82,10 +98,6 @@ function decorateTransactions(transactions = []) {
 
 export { decorateTransactions }
 
-// function getStockInfos(tickerorisin, transactions) {
-
-//   return stocks // [{sympol: 'TSLA', productp&l: 10, trades: n, first bought, last_bought, first_sold, last_sold, 200_days_moving_avg, top price bought, top price sold, lowest price bought, lowest price sold}]
-// }
 
 /**
  * Transaction Data (These properties don't apply to every transaction types):

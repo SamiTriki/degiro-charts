@@ -7,18 +7,25 @@ import TransactionsList from './TransactionsList'
 import './App.css';
 import AccountSummary from './AccountSummary'
 import { transactionsFromCSV } from './utils'
+import { Transaction } from './transactionUtils'
+
 const papaConfig = { header: true}
 
+interface HomeProps {
+  setTransactions: any,
+  transactions: Transaction[],
+  hideNilTransactions: boolean
+}
 
-function Home({setTransactions, transactions, hideNilTransactions}) {
-  const [csvParsingError, setCsvParsingError] = useState(false)
+function Home({setTransactions, transactions, hideNilTransactions} : HomeProps) {
+  const [csvParsingError, setCsvParsingError] = useState(false as any)
 
-  const handleOnDrop = (results) => {
+  const handleOnDrop = (results:any[]) => {
     setCsvParsingError(false)
-    setTransactions(transactionsFromCSV(results.map(r => r.data)))
+    setTransactions(transactionsFromCSV(results.map((r) => r.data)))
   }
 
-  const handleOnError = (err) => {
+  const handleOnError = (err:any) => {
     setCsvParsingError(err);
   }
   const handleOnRemoveFile = () => setTransactions([])
@@ -49,7 +56,7 @@ function Home({setTransactions, transactions, hideNilTransactions}) {
       <div className="row">
         <div className="square">
           <h2>Cash balance over time</h2>
-          <Chart style={{ padding: 0 }} transactions={transactions} />
+          <Chart transactions={transactions} style={{ padding: 0 }} />
         </div>
         <div className="square">
           <h2>Transactions History</h2>

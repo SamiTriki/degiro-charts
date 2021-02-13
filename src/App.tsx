@@ -9,7 +9,9 @@ import {
 
 import { readString } from 'react-papaparse'
 import { transactionsFromCSV } from './utils'
-import Home from './Home.js'
+import { Transaction } from './transactionUtils'
+
+import Home from './Home'
 import TradedSymbols from './TradedSymbols.js'
 
 import './App.css';
@@ -21,7 +23,7 @@ const getLocalTransactions = () =>
   .then(res => res.text());
 
 function App() {
-  const [transactions, setTransactions] = useState([])
+  const [transactions, setTransactions] = useState([] as Transaction[])
   const [hideNilTransactions] = useState(true)
 
   useEffect(() => {
@@ -34,7 +36,6 @@ function App() {
     setDefaultTransactions()
   }, [])
   return (
-
     <Router>
       <header className="App-header">
           <h3>Degiro charts</h3>
@@ -47,8 +48,6 @@ function App() {
         <Switch>
           <Route path="/traded-stocks">
             <TradedSymbols transactions={transactions} />
-          </Route>
-          <Route path="/users">
           </Route>
           <Route path="/">
             <Home
