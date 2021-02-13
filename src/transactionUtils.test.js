@@ -1,4 +1,4 @@
-import { decorateTransactions } from './transactionUtils.js';
+import { decorateTransactions } from './transactionUtils.ts';
 
 describe("Decorate transactions", () => {
 
