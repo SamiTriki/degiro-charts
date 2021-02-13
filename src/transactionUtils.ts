@@ -11,29 +11,47 @@ const REGEXES = {
 }
 
 export interface Transaction {
+  /** @example "GBP" @description The currency in which the transaction is settled, the 'value' entry is in that currency */
   readonly currency?: string,
+  /** @example 415 @description Value of transaction in the currency specified */
   readonly value?: number,
+  /** @example "SUPERFASTCARS MOTORS INC. C" @description  Stock being bought or sold as a descriptive string */
   readonly product?: string,
+  /** @example "Some description" @description Describes the transaction with informations relative to the nature of the product being exchanged or the fee */
   readonly description?: string,
+  /** @example "dummy-dummy-dummy-18" @description What order is this transaction attached to. Fx credits, debits, transaction fees share the orderID of a stock purchase */
   readonly orderId?: string,
+  /** @example 1.21233 @description Exchange rate multiplier. Appears for FX credits/Debit in a currency other than the account currency and is equal to home_currency / currency */
   readonly fx?: number,
+  /** @example "US00000R000FAKE" @description ISIN of the product being purchased. Cross exchange unique identifier, can be mapped to a symbol via the adequate api / mapping */
   readonly isin?: string,
+  /** @example new Date() @description The date the transaction is executed */
   readonly date: Date,
+  /** @example "2020-01-01" @description String for representing the day date a transaction happened. used to sort transactions into different periods */
   readonly dateString: string,
+  /** @example 1559925240000 @description Timestamp of date, used for easy sorting */
   readonly timestamp: number,
-  type?: string,
-  sharePrice?: number,
+  /** @description Type of the transaction used to categorise and sort it */
+  type: 'deposit' | 'withdrawal' | 'interest' | 'dividend' | 'fx' | 'fee' | 'buy' | 'sell' | 'unknown',
+  /** @example 2 @description Numb of shares bought or sold, only available for 'buy' or 'sell' type */
   shareCount?: number,
+  /** @example "GBX" @description Currency used to purchase the shares, the 'sharePrice' entry is in that currency
+   * It can be different fron the 'currency' property. For example shares bought on the London stock exchange use GBX which
+   * is a sub denomination of the GBP. */
   shareCurrency?: string
+  /** @example 400 @description Price of the share at the time of buying or selling, in the 'shareCurrency' specified. only available for 'buy' or 'sell' type */
+  sharePrice?: number,
 }
+
 /**
- we want to decorate transactions with augmented information that can be parsed from its
- description and other properties like orderID in order to be able to present transactions in
- a better way whether through the transaction list or chart
- TODO: separate decoration and CSV extraction. Keep csv extraction for cleaning up property names and adding dates functions
- TODO: Make safe floating point operations using moneysafe
- Keep decorateTransactions for adding new properties from description and linking transactions together
-*/
+ * Takes an array of transactions and gives them a "type" property infered from its description
+ * in order to facilitate sorting and presentation.
+ *
+ * 'sell' and 'buy' type transactions are augmented with 'sharePrice', 'shareCount', 'shareCurrency'
+ * @beta
+ * TODO: separate decoration and CSV extraction. Keep csv extraction for cleaning up property names and adding dates functions
+ * TODO: Make safe floating point operations using dinero.js or other
+ */
 function decorateTransactions(transactions: Transaction[] = []) : Transaction[] {
   const decorated = transactions.map(transaction => {
     if (!transaction || !transaction.description) {
@@ -96,22 +114,57 @@ function decorateTransactions(transactions: Transaction[] = []) : Transaction[] 
   return decorated
 }
 
-export { decorateTransactions }
-
-
 /**
- * Transaction Data (These properties don't apply to every transaction types):
- * currency: "GBP" - The currency in which the transaction is settled, the 'value' entry is in that currency
- * value: 415 - Value of transaction in the currency specified
- * product: "SUPERFASTCARS MOTORS INC. - C" - Stock being bought or sold as a descriptive string
- * description: "Some description" - Describes the transaction with informations relative to the nature of the product being exchanged or the fee
- * orderId: "dummy-dummy-dummy-18" - What order is this transaction attached to. Fx credits, debits, transaction fees share the orderID of a stock purchase
- * fx: 1.21233 - Exchange rate multiplier. Appears for FX credits/Debit in a currency other than the account currency and is equal to home_currency / currency
- * isin: "US00000R000FAKE" - ISIN of the product being purchased. Cross exchange unique identifier, can be mapped to a symbol via the adequate api / mapping
- * date: Date - The date the transaction is executed
- * dateString: "yyyy-mm-dd" - String for representing the day date a transaction happened. used to sort transactions into different periods
- * timestamp: 1559925240000 - Timestamp of date, used for easy sorting
+ * Gives total cash balance periodically sorted
+ * @param transactions
+ * @param period
+ * @returns Dictionary with period as key.
  *
+ * @example
+ * ```ts
+ *  transactionsPerPeriod([Transaction, Transaction, Transaction], 'month')
+ * // output
+ * {
+ *  '2020-01': { value, total, transactions, prevPeriod: undefined},
+ *  '2020-02': { value, total, transactions, prevPeriod: '2020-01'}
+ * }
+ * ```
+ *  @example
+ *  Day period "2020-01-01"
+ *  Month period "2020-01"
+ *  Year period "2020"
+ *
+  */
+const transactionsPerPeriod = (transactions: Transaction[], period : 'day' | 'month' | 'year') : Record<string, any> =>
+  transactions.reduce((dates, current) => {
+    const [year, month, day] = current.dateString.split('-')
+    let periodDateString = period === 'day' ? `${year}-${month}-${day}` : period === 'month' ? `${year}-${month}` : year
+    let previousPeriodKey = Object.keys(dates)[Object.keys(dates).length-1];
+    let prevTotal = dates[previousPeriodKey]?.total || 0
+
+    if (dates[periodDateString]) {
+        dates[periodDateString].value += current.value
+        dates[periodDateString].total += current.value
+        dates[periodDateString].transactions++
+    } else {
+        dates[periodDateString] = {
+          date: current.date,
+          dateString: periodDateString,
+          timestamp: current.timestamp,
+          value: current.value,
+          total: current.value + prevTotal,
+          transactions: current.value ? 1 : 0,
+          prevPeriod: previousPeriodKey,
+        };
+    }
+
+    return dates
+  }, {} as Record<string, any>)
+
+export { decorateTransactions, transactionsPerPeriod }
+
+
+ /*
  * Transaction types and their descriptions and what can be exracted into types and metadata:
  * deposit:
  * Desposit: I add cash into my account

@@ -8,7 +8,7 @@ import {
 } from "react-router-dom";
 
 import { readString } from 'react-papaparse'
-import { transactionsFromCSV } from './utils'
+import { transactionsFromCSV } from './csvUtils'
 import { Transaction } from './transactionUtils'
 
 import Home from './Home'

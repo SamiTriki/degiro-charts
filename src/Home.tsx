@@ -6,7 +6,7 @@ import TransactionsList from './TransactionsList'
 
 import './App.css';
 import AccountSummary from './AccountSummary'
-import { transactionsFromCSV } from './utils'
+import { transactionsFromCSV } from './csvUtils'
 import { Transaction } from './transactionUtils'
 
 const papaConfig = { header: true}

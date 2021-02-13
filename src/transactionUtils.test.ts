@@ -1,4 +1,5 @@
-import { decorateTransactions } from './transactionUtils.ts';
+// @ts-nocheck
+import { decorateTransactions } from './transactionUtils';
 
 describe("Decorate transactions", () => {
 

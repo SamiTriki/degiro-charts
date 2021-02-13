@@ -1,4 +1,4 @@
-import { transactionsPerPeriod } from './utils.ts'
+import { transactionsPerPeriod } from './transactionUtils.ts'
 import * as V from 'victory'
 
 /** calculates ticks to render on the x-axis, we just want to display
