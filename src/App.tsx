@@ -12,7 +12,7 @@ import { transactionsFromCSV } from './csvUtils'
 import { Transaction } from './transactionUtils'
 
 import Home from './Home'
-import TradedSymbols from './TradedSymbols'
+import TradedSecurities from './TradedSecurities'
 
 import './App.css';
 
@@ -42,14 +42,14 @@ function App() {
           <h3>Degiro charts</h3>
           <nav>
               <Link to="/">Home</Link>
-              <Link to="/traded-stocks">Traded symbols</Link>
+              <Link to="/traded-stocks">Traded Securities</Link>
           </nav>
       </header>
       {
         transactions.length ? (
           <Switch>
             <Route path="/traded-stocks">
-              <TradedSymbols transactions={transactions} />
+              <TradedSecurities transactions={transactions} />
             </Route>
             <Route path="/">
               <Home

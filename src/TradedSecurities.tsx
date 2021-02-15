@@ -2,19 +2,24 @@ import { useState } from "react"
 import { Transaction } from "./transactionUtils";
 const CORS_PROXY_URL = 'https://cors-anywhere.herokuapp.com/'
 
-interface TradedSymbolsProps {
+interface TradedSecuritiesProps {
   transactions: Transaction[]
 }
 
 /**
- * @description Represents a traded product
+ * @description Represents a security that has been traded extracted from the transactions list, it's local to the csv
+ * it's used to search securities online so that their information can be completed, they have no other use besides searching for more info
  */
-interface Product {
+interface TradedSecurity {
   isin: string,
   name: string,
 }
 
-interface OpenFigiSymbol {
+/**
+ * @description Represents a security with all the attributes we'd expect, it's retrieved online in the openFigi api
+ * get decorated with isin and used for showing stock tickers on the app
+ */
+interface OpenFigiSecurity {
   name: string,
   ticker: string,
   exchCode: string,
@@ -25,7 +30,7 @@ interface OpenFigiSymbol {
   isin?: string // todo: decorate openfigi symbols with isin for easier mapping
 }
 
-function searchOpenFigi(isin : string) : Promise<OpenFigiSymbol[]> {
+function searchOpenFigi(isin : string) : Promise<OpenFigiSecurity[]> {
   // TODO: Use own middleware as proxy for openfigi and keep isin/symbol mapping there
   return window.fetch(CORS_PROXY_URL+'https://api.openfigi.com/v2/mapping', {
     method: 'POST',
@@ -82,13 +87,13 @@ function searchOpenFigi(isin : string) : Promise<OpenFigiSymbol[]> {
  * Use react-query
  * Find the right abstraction for search results, errors ect
  */
-export default function TradedSymbols({transactions} : TradedSymbolsProps) {
+export default function TradedSecurities({transactions} : TradedSecuritiesProps) {
   const [searchResults, setSearchResults] = useState(null as any)
   const [fetchError, setFetchError] = useState(null as any)
   const [status, setStatus] = useState('idle')
 
   // Find traded products from transactions
-  const products = transactions.reduce((products , t) => {
+  const securities = transactions.reduce((products , t) => {
     const { isin, product } = t
     if (!isin || !product) {
       return products;
@@ -98,9 +103,9 @@ export default function TradedSymbols({transactions} : TradedSymbolsProps) {
       ...products,
       [product]: { isin, name: product }
     }
-  }, {} as Record<Product["name"], Product>)
+  }, {} as Record<TradedSecurity["name"], TradedSecurity>)
 
-  function onSelectproduct(product : Product) : void {
+  function onSelectSecurity(product : TradedSecurity) : void {
     setStatus('pending')
 
     searchOpenFigi(product.isin)
@@ -122,10 +127,11 @@ export default function TradedSymbols({transactions} : TradedSymbolsProps) {
 
   return (
     <div className="container">
-      Products: {
-        Object.values(products).map((product) => {
+      <p>Currently traded securities:</p>
+      {
+        Object.values(securities).map((security) => {
           return (
-            <button key={product.isin} onClick={() => onSelectproduct(product)}>{product.name}</button>
+            <button key={security.isin} onClick={() => onSelectSecurity(security)}>{security.name}</button>
           )
         })
       }
