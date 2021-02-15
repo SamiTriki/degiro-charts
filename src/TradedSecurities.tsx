@@ -50,7 +50,8 @@ function searchOpenFigi(isin : string) : Promise<OpenFigiSecurity[]> {
   })
   .then(openFigiJSON => {
     // flatten figi map response
-    return openFigiJSON.map((figi : Record<string,Transaction[]>) => figi.data)
+    return openFigiJSON
+      .map((figi : Record<string,OpenFigiSecurity[]>) => figi.data[0])
   })
 
 }
@@ -88,7 +89,7 @@ function searchOpenFigi(isin : string) : Promise<OpenFigiSecurity[]> {
  * Find the right abstraction for search results, errors ect
  */
 export default function TradedSecurities({transactions} : TradedSecuritiesProps) {
-  const [searchResults, setSearchResults] = useState(null as any)
+  const [searchResults, setSearchResults] = useState([] as OpenFigiSecurity[])
   const [fetchError, setFetchError] = useState(null as any)
   const [status, setStatus] = useState('idle')
 
@@ -112,7 +113,7 @@ export default function TradedSecurities({transactions} : TradedSecuritiesProps)
       .then(res => {
         setStatus('resolved')
         if (res?.length) {
-          return setSearchResults(res[0])
+          return setSearchResults(res)
         }
       })
       .catch(e => {
