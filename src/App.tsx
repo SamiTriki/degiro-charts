@@ -12,7 +12,7 @@ import { transactionsFromCSV } from './csvUtils'
 import { Transaction } from './transactionUtils'
 
 import Home from './Home'
-import TradedSymbols from './TradedSymbols.js'
+import TradedSymbols from './TradedSymbols'
 
 import './App.css';
 
@@ -35,6 +35,7 @@ function App() {
 
     setDefaultTransactions()
   }, [])
+
   return (
     <Router>
       <header className="App-header">
@@ -44,19 +45,23 @@ function App() {
               <Link to="/traded-stocks">Traded symbols</Link>
           </nav>
       </header>
+      {
+        transactions.length ? (
+          <Switch>
+            <Route path="/traded-stocks">
+              <TradedSymbols transactions={transactions} />
+            </Route>
+            <Route path="/">
+              <Home
+                transactions={transactions}
+                setTransactions={setTransactions}
+                hideNilTransactions={hideNilTransactions}
+              />
+            </Route>
+          </Switch>
+        ) : <div className="container" >Waiting for transactions</div>
+      }
 
-        <Switch>
-          <Route path="/traded-stocks">
-            <TradedSymbols transactions={transactions} />
-          </Route>
-          <Route path="/">
-            <Home
-              transactions={transactions}
-              setTransactions={setTransactions}
-              hideNilTransactions={hideNilTransactions}
-            />
-          </Route>
-        </Switch>
     </Router>
   );
 }

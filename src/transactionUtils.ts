@@ -14,7 +14,7 @@ export interface Transaction {
   /** @example "GBP" @description The currency in which the transaction is settled, the 'value' entry is in that currency */
   readonly currency?: string,
   /** @example 415 @description Value of transaction in the currency specified */
-  readonly value?: number,
+  readonly value: number,
   /** @example "SUPERFASTCARS MOTORS INC. C" @description  Stock being bought or sold as a descriptive string */
   readonly product?: string,
   /** @example "Some description" @description Describes the transaction with informations relative to the nature of the product being exchanged or the fee */
