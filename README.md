@@ -10,3 +10,4 @@ Features in progress:
 - Fees calculator
 - More charts
 - Plot my transactions on actual stock price chart. Looking at a stock price chart I want to see the exact moment I bought/sold.
+- make it pretty
