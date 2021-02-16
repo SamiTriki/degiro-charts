@@ -10,6 +10,10 @@
     "@types/node": "^14.14.27",
     "@types/react": "^17.0.1",
     "@types/react-dom": "^17.0.0",
+    "eslint-config-prettier": "^7.2.0",
+    "husky": "^5.0.9",
+    "lint-staged": "^10.5.4",
+    "prettier": "^2.2.1",
     "react": "^17.0.1",
     "react-dom": "^17.0.1",
     "react-papaparse": "^3.11.1",
@@ -28,7 +32,23 @@
   "eslintConfig": {
     "extends": [
       "react-app",
-      "react-app/jest"
+      "react-app/jest",
+      "prettier"
+    ]
+  },
+  "prettier": {
+    "singleQuote": true,
+    "semi": false,
+    "arrowParens": "avoid"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+ "lint-staged": {
+    "src/**/*.{js,jsx,ts,tsx,json,css,scss,md}": [
+      "prettier --write"
     ]
   },
   "browserslist": {
