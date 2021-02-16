@@ -1,34 +1,8 @@
 import { useState } from "react"
 import { Transaction } from "./transactionUtils";
+import  { OpenFigiSecurity, TradedSecurity } from "./TradedSecuritiesUtils";
+
 const CORS_PROXY_URL = 'https://cors-anywhere.herokuapp.com/'
-
-interface TradedSecuritiesProps {
-  transactions: Transaction[]
-}
-
-/**
- * @description Represents a security that has been traded extracted from the transactions list, it's local to the csv
- * it's used to search securities online so that their information can be completed, they have no other use besides searching for more info
- */
-interface TradedSecurity {
-  isin: string,
-  name: string,
-}
-
-/**
- * @description Represents a security with all the attributes we'd expect, it's retrieved online in the openFigi api
- * get decorated with isin and used for showing stock tickers on the app
- */
-interface OpenFigiSecurity {
-  name: string,
-  ticker: string,
-  exchCode: string,
-  securityType: string,
-  securityType2: string,
-  securityDescription: string,
-  marketSector: string,
-  isin?: string // todo: decorate openfigi symbols with isin for easier mapping
-}
 
 function searchOpenFigi(isin : string) : Promise<OpenFigiSecurity[]> {
   // TODO: Use own middleware as proxy for openfigi and keep isin/symbol mapping there
@@ -54,6 +28,10 @@ function searchOpenFigi(isin : string) : Promise<OpenFigiSecurity[]> {
       .map((figi : Record<string,OpenFigiSecurity[]>) => figi.data[0])
   })
 
+}
+
+interface TradedSecuritiesProps {
+  transactions: Transaction[]
 }
 /**
  *
@@ -94,14 +72,14 @@ export default function TradedSecurities({transactions} : TradedSecuritiesProps)
   const [status, setStatus] = useState('idle')
 
   // Find traded products from transactions
-  const securities = transactions.reduce((products , t) => {
+  const securities = transactions.reduce((securities , t) => {
     const { isin, product } = t
     if (!isin || !product) {
-      return products;
+      return securities;
     }
 
     return {
-      ...products,
+      ...securities,
       [product]: { isin, name: product }
     }
   }, {} as Record<TradedSecurity["name"], TradedSecurity>)
