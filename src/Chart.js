@@ -1,4 +1,4 @@
-import { transactionsPerPeriod } from './utils'
+import { transactionsPerPeriod } from './transactionUtils.ts'
 import * as V from 'victory'
 
 /** calculates ticks to render on the x-axis, we just want to display
@@ -26,11 +26,12 @@ function calculateTicksForChart(transactions, segmentsCount = 4) {
   return [min, ...ticks, max].map(t => new Date(t))
 }
 
-
-function Chart({ transactions}) {
+// Fix ts issue with style requirement
+function Chart({ transactions, style }) {
   if (!transactions.length) {
     return <p>Waiting for data to draw chart</p>
   }
+
   const transactionsByDay = transactionsPerPeriod(transactions, 'day')
   const transactionsByDayArray = Object.values(transactionsByDay)
   const tickValues = calculateTicksForChart(transactionsByDayArray)
