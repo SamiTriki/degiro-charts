@@ -1,4 +1,4 @@
-function TransactionsList({transactions, hideNilTransactions}) {
+function TransactionsList({ transactions, hideNilTransactions }) {
   let transactionsCopy = [...transactions]
 
   if (!transactions.length) {
@@ -10,33 +10,31 @@ function TransactionsList({transactions, hideNilTransactions}) {
   }
 
   return (
-    <ul style={{listStyle: 'none', textAlign: 'left', fontSize: '1rem'}}>
-    {
-      transactionsCopy.map((t, idx) => {
+    <ul style={{ listStyle: 'none', textAlign: 'left', fontSize: '1rem' }}>
+      {transactionsCopy.map((t, idx) => {
         return <TransactionLineItem key={idx} {...t} />
-      })
-    }
+      })}
     </ul>
   )
-
 }
 
-function TransactionLineItem({description, value, dateString, currency}) {
+function TransactionLineItem({ description, value, dateString, currency }) {
   return (
     <li>
-      <span style={{ fontStyle: "italic", fontSize: ".8rem" }}>
+      <span style={{ fontStyle: 'italic', fontSize: '.8rem' }}>
         {dateString}
-      </span>
-      {" "}{description} <SignedAmount value={value} currency={currency} />
+      </span>{' '}
+      {description} <SignedAmount value={value} currency={currency} />
     </li>
-  );
+  )
 }
 
-function SignedAmount({value, currency}) {
-  const isPositive = value >= 0;
+function SignedAmount({ value, currency }) {
+  const isPositive = value >= 0
   return (
-    <span style={{color: isPositive ? 'green' : 'red'}}>
-      {currency}{value.toFixed(2)}
+    <span style={{ color: isPositive ? 'green' : 'red' }}>
+      {currency}
+      {value.toFixed(2)}
     </span>
   )
 }

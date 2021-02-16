@@ -34,7 +34,7 @@
   margin: 0 5%;
 }
 
-.row  {
+.row {
   display: inline-block;
   width: 100%;
 }
@@ -44,7 +44,7 @@
 }
 .scroll {
   max-height: 75vh;
-  overflow:scroll;
+  overflow: scroll;
 }
 
 @media screen and (max-width: 768px) {

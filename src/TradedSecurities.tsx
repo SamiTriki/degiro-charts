@@ -1,33 +1,36 @@
-import { useState } from "react"
-import { Transaction } from "./transactionUtils";
-import  { OpenFigiSecurity, TradedSecurity } from "./TradedSecuritiesUtils";
+import { useState } from 'react'
+import { Transaction } from './transactionUtils'
+import { OpenFigiSecurity, TradedSecurity } from './TradedSecuritiesUtils'
 
 const CORS_PROXY_URL = 'https://cors-anywhere.herokuapp.com/'
 
-function searchOpenFigi(isin : string) : Promise<OpenFigiSecurity[]> {
+function searchOpenFigi(isin: string): Promise<OpenFigiSecurity[]> {
   // TODO: Use own middleware as proxy for openfigi and keep isin/symbol mapping there
-  return window.fetch(CORS_PROXY_URL+'https://api.openfigi.com/v2/mapping', {
-    method: 'POST',
-    headers: new Headers({
-      'Accept': 'application/json',
-      'Content-Type': 'application/json',
-    }),
-    body: JSON.stringify([{"idType":"ID_ISIN","idValue": isin}])
-  })
-  .then(res => {
-    if (!res.ok) {
-      const {statusText, status, type } = res;
-      throw new Error(`An error occured while fetching openfigi data [${type}]${status}:${statusText}`)
-    }
+  return window
+    .fetch(CORS_PROXY_URL + 'https://api.openfigi.com/v2/mapping', {
+      method: 'POST',
+      headers: new Headers({
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      }),
+      body: JSON.stringify([{ idType: 'ID_ISIN', idValue: isin }]),
+    })
+    .then(res => {
+      if (!res.ok) {
+        const { statusText, status, type } = res
+        throw new Error(
+          `An error occured while fetching openfigi data [${type}]${status}:${statusText}`
+        )
+      }
 
-    return res.json()
-  })
-  .then(openFigiJSON => {
-    // flatten figi map response
-    return openFigiJSON
-      .map((figi : Record<string,OpenFigiSecurity[]>) => figi.data[0])
-  })
-
+      return res.json()
+    })
+    .then(openFigiJSON => {
+      // flatten figi map response
+      return openFigiJSON.map(
+        (figi: Record<string, OpenFigiSecurity[]>) => figi.data[0]
+      )
+    })
 }
 
 interface TradedSecuritiesProps {
@@ -66,25 +69,27 @@ interface TradedSecuritiesProps {
  * Use react-query
  * Find the right abstraction for search results, errors ect
  */
-export default function TradedSecurities({transactions} : TradedSecuritiesProps) {
+export default function TradedSecurities({
+  transactions,
+}: TradedSecuritiesProps) {
   const [searchResults, setSearchResults] = useState([] as OpenFigiSecurity[])
   const [fetchError, setFetchError] = useState(null as any)
   const [status, setStatus] = useState('idle')
 
   // Find traded products from transactions
-  const securities = transactions.reduce((securities , t) => {
+  const securities = transactions.reduce((securities, t) => {
     const { isin, product } = t
     if (!isin || !product) {
-      return securities;
+      return securities
     }
 
     return {
       ...securities,
-      [product]: { isin, name: product }
+      [product]: { isin, name: product },
     }
-  }, {} as Record<TradedSecurity["name"], TradedSecurity>)
+  }, {} as Record<TradedSecurity['name'], TradedSecurity>)
 
-  function onSelectSecurity(product : TradedSecurity) : void {
+  function onSelectSecurity(product: TradedSecurity): void {
     setStatus('pending')
 
     searchOpenFigi(product.isin)
@@ -95,30 +100,44 @@ export default function TradedSecurities({transactions} : TradedSecuritiesProps)
         }
       })
       .catch(e => {
-        setFetchError(e);
+        setFetchError(e)
         setStatus('error')
       })
   }
 
-  let results = searchResults?.length ?
-     <pre>{JSON.stringify(searchResults[0],null, '  ')}</pre> :
-     <pre>No results found on openFigi for that ISIN, what a bad luck (we might offer broader search in the future might might)</pre>
+  let results = searchResults?.length ? (
+    <pre>{JSON.stringify(searchResults[0], null, '  ')}</pre>
+  ) : (
+    <pre>
+      No results found on openFigi for that ISIN, what a bad luck (we might
+      offer broader search in the future might might)
+    </pre>
+  )
 
   return (
     <div className="container">
       <p>Currently traded securities:</p>
-      {
-        Object.values(securities).map((security) => {
-          return (
-            <button key={security.isin} onClick={() => onSelectSecurity(security)}>{security.name}</button>
-          )
-        })
-      }
-      {
-      status === 'idle' ? <div>Click one of the products to find detailed ticker information</div> :
-      status === 'resolved' ? <pre>{results}</pre> :
-      status === 'error' ? <div style={{color: 'red'}}>Something went wrong {fetchError?.message}</div> :
-      status === 'pending' ? <div>...</div> : null}
+      {Object.values(securities).map(security => {
+        return (
+          <button
+            key={security.isin}
+            onClick={() => onSelectSecurity(security)}
+          >
+            {security.name}
+          </button>
+        )
+      })}
+      {status === 'idle' ? (
+        <div>Click one of the products to find detailed ticker information</div>
+      ) : status === 'resolved' ? (
+        <pre>{results}</pre>
+      ) : status === 'error' ? (
+        <div style={{ color: 'red' }}>
+          Something went wrong {fetchError?.message}
+        </div>
+      ) : status === 'pending' ? (
+        <div>...</div>
+      ) : null}
     </div>
   )
 }

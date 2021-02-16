@@ -1,30 +1,31 @@
-import { decorateTransactions, Transaction } from "./transactionUtils";
+import { decorateTransactions, Transaction } from './transactionUtils'
 
 // { Date: '20/10/2020', Time: '10:50'} => Date Object
-const csvTransactionToDate = (csvTransaction : any) : Date => {
+const csvTransactionToDate = (csvTransaction: any): Date => {
   let [day, month, year] = csvTransaction.Date.split('-')
   let [hour, second] = csvTransaction.Time?.split(':')
   // Month is 0 indexed
-  return new Date(year, month - 1, day, hour, second);
+  return new Date(year, month - 1, day, hour, second)
 }
 
 // Date Object => '2020-01-29'
-const csvDateToString = (date: Date) : string => {
-  let [day, month, year] = date.toLocaleDateString("en-GB", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).split('/')
+const csvDateToString = (date: Date): string => {
+  let [day, month, year] = date
+    .toLocaleDateString('en-GB', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    })
+    .split('/')
 
   return `${year}-${month}-${day}`
 }
 
-function transactionsFromCSV(CSVResults : any[]) : Transaction[] {
-  let transactions : Transaction[] = CSVResults
-    .filter(t => t)
+function transactionsFromCSV(CSVResults: any[]): Transaction[] {
+  let transactions: Transaction[] = CSVResults.filter(t => t)
     .filter(t => t.Date && t.Time)
     .map(transaction => {
-      const { Value, Product, Description, Currency, ISIN, FX} = transaction
+      const { Value, Product, Description, Currency, ISIN, FX } = transaction
       let date = csvTransactionToDate(transaction)
       let dateString = csvDateToString(date)
       let timestamp = date.getTime()
@@ -40,12 +41,12 @@ function transactionsFromCSV(CSVResults : any[]) : Transaction[] {
         isin: ISIN,
         fx: FX,
         orderId: transaction['Order Id'],
-        type: 'unknown'
+        type: 'unknown',
       } as Transaction
     })
     .sort((a, b) => a.date.getTime() - b.date.getTime())
 
-    return decorateTransactions(transactions);
+  return decorateTransactions(transactions)
 }
 
 export { transactionsFromCSV }
