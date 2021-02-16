@@ -1,6 +1,7 @@
 import React from 'react'
 import { useEffect, useState } from 'react'
 import { BrowserRouter as Router, Switch, Route, Link } from 'react-router-dom'
+import { ReactComponent as Logo } from './logo.svg'
 
 import { readString } from 'react-papaparse'
 import { transactionsFromCSV } from './csvUtils'
@@ -33,10 +34,19 @@ function App() {
   return (
     <Router>
       <header className="App-header">
-        <h3>Degiro charts</h3>
+        <div className="App-logo">
+          <Logo />
+          <span>DEGIRO Charts</span>
+        </div>
         <nav>
-          <Link to="/">Home</Link>
-          <Link to="/traded-stocks">Traded Securities</Link>
+          <ul>
+            <li>
+              <Link to="/">HOME</Link>
+            </li>
+            <li>
+              <Link to="/traded-stocks">TRADED SECURITIES</Link>
+            </li>
+          </ul>
         </nav>
       </header>
       {transactions.length ? (
