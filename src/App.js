@@ -4,37 +4,17 @@ import { useEffect, useState } from 'react'
 import { transactionsFromCSV } from './utils'
 import React from 'react';
 import Chart from './Chart'
+import AccountSummary from './AccountSummary'
 const papaConfig = { header: true}
 
 const getLocalTransactions = () =>
   fetch('./Account.csv')
   .then(res => res.text());
 
-function calculatePortfolioValue(transactions) {
-  return transactions.reduce((sum, curr) => {
-    return sum + (curr.value || 0)
-  }, 0)
-}
-
-// Assumes transactions are sorted
-function calculateDateRange(transactions) {
-  if (!transactions.length) {
-    return {}
-  }
-
-  return {
-    start: transactions[0].dateString,
-    end: transactions[transactions.length-1].dateString
-  }
-}
-
 function App() {
   const [transactions, setTransactions] = useState([]);
   const [hideNilTransactions] = useState(true)
-  const [currency] = useState('GBP')
   const [csvParsingError, setCsvParsingError] = useState(false)
-  const portfolioValue = calculatePortfolioValue(transactions)
-  const { start, end } = calculateDateRange(transactions)
 
   const handleOnDrop = (results) => {
     setCsvParsingError(false)
@@ -59,36 +39,30 @@ function App() {
   return (
     <div className="">
       <header className="App-header">
-        <p>
-          Degiro charts - P&L:&nbsp;
-          <SignedAmount value={portfolioValue} currency={currency} />{" "}
-          {start ? (
-            <span>
-              ({start} to {end})
-            </span>
-          ) : (
-            ""
-          )}
-        </p>
+        <h1>Degiro charts</h1>
       </header>
       <div className="container">
-      <div className="row" style={{ paddingTop: "20px" }}>
-        <div className="square">
-          <CSVReader
-            onDrop={handleOnDrop}
-            onError={handleOnError}
-            style={{}}
-            config={papaConfig}
-            addRemoveButton
-            onRemoveFile={handleOnRemoveFile}
-          >
-            <span>Drop CSV file here or click to upload.</span>
-          </CSVReader>
-          <p style={{ color: "red" }}>
-            {csvParsingError ? csvParsingError.message : ""}
-          </p>
+        <div className="row" style={{ paddingTop: "20px" }}>
+          <div className="square">
+            <CSVReader
+              onDrop={handleOnDrop}
+              onError={handleOnError}
+              style={{}}
+              config={papaConfig}
+              addRemoveButton
+              onRemoveFile={handleOnRemoveFile}
+            >
+              <span>Drop CSV file here or click to upload.</span>
+            </CSVReader>
+            <p style={{ color: "red" }}>
+              {csvParsingError ? csvParsingError.message : ""}
+            </p>
+          </div>
+          <div className="square">
+            <h2>Account summary</h2>
+            <AccountSummary transactions={transactions}></AccountSummary>
+          </div>
         </div>
-      </div>
         <div className="row">
           <div className="square">
             <h2>Cash balance over time</h2>
@@ -151,5 +125,5 @@ function SignedAmount({value, currency}) {
     </span>
   )
 }
-export default App;
 
+export default App;

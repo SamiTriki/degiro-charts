@@ -14,7 +14,6 @@
 }
 
 .App-header {
-
   background-color: #282c34;
   padding: 0 10px;
   display: flex;
@@ -30,8 +29,9 @@
 }
 
 .square {
-  width: 50%;
+  width: 40%;
   float: left;
+  margin: 0 5%;
 }
 
 .row  {
@@ -50,6 +50,7 @@
 @media screen and (max-width: 768px) {
   .square {
     width: 100%;
+    margin: 0;
   }
 }
 
