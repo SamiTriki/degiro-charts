@@ -1,5 +1,6 @@
 import { getSecuritiesFromIsins } from './openFigiApi.ts'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
+import userEvent from '@testing-library/user-event'
 /**
  * Module to get isin map and complete a missing map
  *
@@ -83,6 +84,7 @@ export const UseIsinMap = transactions => {
 
     return { ...isinMapFromTransactions, ...localIsinMap }
   })
+  const [newlyAddedIsin, setNewlyAddedIsin] = useState(null)
   const [status, setStatus] = useState('idle')
 
   useEffect(() => {
@@ -102,6 +104,7 @@ export const UseIsinMap = transactions => {
           ...currentIsinMap,
           ...missingIsinsMap,
         }))
+        setNewlyAddedIsin({ ...missingIsinsMap })
         saveLocalIsinMap({ ...isinMap, ...missingIsinsMap })
         setStatus('success')
       } catch (e) {
@@ -110,10 +113,18 @@ export const UseIsinMap = transactions => {
         console.error(e)
       }
     }
-
     getMissinIsinData()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [transactions])
 
-  return { isinMap, setIsinMap, status }
+  const onNewIsinAdded = useCallback(
+    cb => {
+      if (newlyAddedIsin !== null) {
+        cb(newlyAddedIsin)
+      }
+    },
+    [newlyAddedIsin]
+  )
+
+  return { isinMap, setIsinMap, status, onNewIsinAdded }
 }
