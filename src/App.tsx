@@ -1,15 +1,14 @@
-import React from 'react'
 import { useEffect, useState } from 'react'
 import { BrowserRouter as Router, Switch, Route, Link } from 'react-router-dom'
 import { ReactComponent as Logo } from './logo.svg'
-import { UseIsinMap } from './isin-ticker-map/index.js'
+import { UseIsinMap } from './IsinMap/index.js'
 
 import { readString } from 'react-papaparse'
 import { getTransactionsFromCSV } from './csvUtils'
 import { Transaction } from './transactionUtils'
 
-import Home from './Home'
-import TradedSecurities from './TradedSecurities'
+import Home from './views/Home'
+import TradedSecurities from './views/TradedSecurities'
 
 import './App.css'
 

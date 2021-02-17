@@ -1,13 +1,12 @@
 import { useState } from 'react'
 
 import { CSVReader } from 'react-papaparse'
-import Chart from './components/Chart'
-import TransactionsList from './components/TransactionsList'
-import AccountSummary from './components/AccountSummary'
+import Chart from '../components/Chart'
+import TransactionsList from '../components/TransactionsList'
+import AccountSummary from '../components/AccountSummary'
 
-import './App.css'
-import { getTransactionsFromCSV } from './csvUtils'
-import { Transaction } from './transactionUtils'
+import { getTransactionsFromCSV } from '../csvUtils'
+import { Transaction } from '../transactionUtils'
 
 const papaConfig = { header: true }
 

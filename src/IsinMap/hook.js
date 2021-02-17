@@ -1,12 +1,7 @@
 import { getSecuritiesFromIsins } from './openFigiApi.ts'
 import { useEffect, useState, useCallback } from 'react'
-import userEvent from '@testing-library/user-event'
-/**
- * Module to get isin map and complete a missing map
- *
- */
 
-export const generateIsinMapFromTransactions = transactions => {
+const generateIsinMapFromTransactions = transactions => {
   return transactions.reduce((isinMap, t) => {
     if (!t.isin) {
       return isinMap
@@ -35,8 +30,9 @@ const saveLocalIsinMap = isinMap => {
   window.localStorage.setItem('degirocharts.isinmap', JSON.stringify(isinMap))
 }
 
-const deleteLocalIsinMap = () =>
+const deleteLocalIsinMap = () => {
   window.localStorage.removeItem('degirocharts.isinmap')
+}
 
 const getMissingIsinsArray = isinMap => {
   return Object.entries(isinMap).reduce((missing, current) => {
@@ -56,7 +52,6 @@ const fetchMissingIsins = async missingIsinArray => {
     return {}
   }
 
-  console.log({ figiresults })
   let missingIsinsMap = missingIsinArray.reduce((all, isin, index) => {
     let security = figiresults[index] ? { ...figiresults[index], isin } : null
 
@@ -64,13 +59,12 @@ const fetchMissingIsins = async missingIsinArray => {
       ...all,
       [isin]: security || { message: 'could not find isin', isin },
     }
-  }, {}) //?
+  }, {})
 
   return missingIsinsMap
-  // returns an isin map to be merged with current isin map
 }
 
-export const UseIsinMap = transactions => {
+const UseIsinMap = transactions => {
   const [isinMap, setIsinMap] = useState(() => {
     const isinMapFromTransactions = generateIsinMapFromTransactions(
       transactions
@@ -89,8 +83,8 @@ export const UseIsinMap = transactions => {
   useEffect(() => {
     async function getMissinIsinData() {
       let missingIsinsArray = getMissingIsinsArray({
-        ...isinMap,
         ...generateIsinMapFromTransactions(transactions),
+        ...isinMap, // TODO: test that when we already have data in the isin map, it's not refetched
       })
 
       if (!missingIsinsArray.length) {
@@ -128,5 +122,7 @@ export const UseIsinMap = transactions => {
     [newlyAddedIsin]
   )
 
-  return { isinMap, setIsinMap, status, onNewIsinAdded }
+  return { isinMap, status, onNewIsinAdded }
 }
+
+export { UseIsinMap }
