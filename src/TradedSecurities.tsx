@@ -1,38 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Transaction } from './transactionUtils'
-import { OpenFigiSecurity, TradedSecurity } from './TradedSecuritiesUtils'
-
-const CORS_PROXY_URL = 'https://cors-anywhere.herokuapp.com/'
-
-function searchOpenFigi(isin: string): Promise<OpenFigiSecurity[]> {
-  // TODO: Use own middleware as proxy for openfigi and keep isin/symbol mapping there
-  return window
-    .fetch(CORS_PROXY_URL + 'https://api.openfigi.com/v2/mapping', {
-      method: 'POST',
-      headers: new Headers({
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      }),
-      body: JSON.stringify([{ idType: 'ID_ISIN', idValue: isin }]),
-    })
-    .then(res => {
-      if (!res.ok) {
-        const { statusText, status, type } = res
-        throw new Error(
-          `An error occured while fetching openfigi data [${type}]${status}:${statusText}`
-        )
-      }
-
-      return res.json()
-    })
-    .then(openFigiJSON => {
-      // flatten figi map response
-      return openFigiJSON.map(
-        (figi: Record<string, OpenFigiSecurity[]>) => figi.data[0]
-      )
-    })
-}
-
+import { TradedSecurity } from './TradedSecuritiesUtils'
+import { searchOpenFigi } from './isin-ticker-map/openFigiApi'
+import { OpenFigiSecurity } from './isin-ticker-map/types'
+import { UseIsinMap } from './isin-ticker-map/index.js'
 interface TradedSecuritiesProps {
   transactions: Transaction[]
 }
@@ -75,7 +46,9 @@ export default function TradedSecurities({
   const [searchResults, setSearchResults] = useState([] as OpenFigiSecurity[])
   const [fetchError, setFetchError] = useState(null as any)
   const [status, setStatus] = useState('idle')
+  const { isinMap } = UseIsinMap(transactions)
 
+  console.log({ isinMap })
   // Find traded products from transactions
   const securities = transactions.reduce((securities, t) => {
     const { isin, product } = t
