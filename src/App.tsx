@@ -4,7 +4,7 @@ import { BrowserRouter as Router, Switch, Route, Link } from 'react-router-dom'
 import { ReactComponent as Logo } from './logo.svg'
 
 import { readString } from 'react-papaparse'
-import { transactionsFromCSV } from './csvUtils'
+import { getTransactionsFromCSV } from './csvUtils'
 import { Transaction } from './transactionUtils'
 
 import Home from './Home'
@@ -25,7 +25,7 @@ function App() {
     async function setDefaultTransactions() {
       const csvString = await getLocalTransactions()
       const parsedTransactions = readString(csvString, papaConfig).data
-      setTransactions(transactionsFromCSV(parsedTransactions))
+      setTransactions(getTransactionsFromCSV(parsedTransactions))
     }
 
     setDefaultTransactions()
