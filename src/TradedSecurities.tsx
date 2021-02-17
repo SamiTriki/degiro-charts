@@ -46,7 +46,7 @@ export default function TradedSecurities({
   const [searchResults, setSearchResults] = useState([] as OpenFigiSecurity[])
   const [fetchError, setFetchError] = useState(null as any)
   const [status, setStatus] = useState('idle')
-  const { isinMap } = UseIsinMap(transactions)
+  const { isinMap, status: isinMapStatus } = UseIsinMap(transactions)
 
   console.log({ isinMap })
   // Find traded products from transactions
@@ -89,6 +89,10 @@ export default function TradedSecurities({
 
   return (
     <div className="container">
+      {isinMapStatus === 'pending' ? 'Loading new figi symbols' : null}
+      {isinMapStatus === 'success' ? 'Figi symbols up to date' : null}
+      {isinMapStatus === 'error' ? 'Error while loading figi symbols' : null}
+
       <p>Currently traded securities:</p>
       {Object.values(securities).map(security => {
         return (
