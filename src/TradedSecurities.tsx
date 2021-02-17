@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Transaction } from './transactionUtils'
 import { TradedSecurity } from './TradedSecuritiesUtils'
 import { searchOpenFigi } from './isin-ticker-map/openFigiApi'
-import { OpenFigiSecurity } from './isin-ticker-map/types'
+import { OpenFigiSecurity, IsinMap } from './isin-ticker-map/types'
 import { UseIsinMap } from './isin-ticker-map/index.js'
 interface TradedSecuritiesProps {
   transactions: Transaction[]
@@ -97,6 +97,7 @@ export default function TradedSecurities({
             onClick={() => onSelectSecurity(security)}
           >
             {security.name}
+            <pre>{JSON.stringify(isinMap[security.isin], null, ' ')}</pre>
           </button>
         )
       })}

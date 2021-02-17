@@ -12,3 +12,5 @@ export interface OpenFigiSecurity {
   marketSector: string
   isin?: string
 }
+
+export type IsinMap = Record<string, OpenFigiSecurity>
