@@ -2,6 +2,7 @@ import React from 'react'
 import { useEffect, useState } from 'react'
 import { BrowserRouter as Router, Switch, Route, Link } from 'react-router-dom'
 import { ReactComponent as Logo } from './logo.svg'
+import { UseIsinMap } from './isin-ticker-map/index.js'
 
 import { readString } from 'react-papaparse'
 import { getTransactionsFromCSV } from './csvUtils'
@@ -20,6 +21,7 @@ const getLocalTransactions = () =>
 function App() {
   const [transactions, setTransactions] = useState([] as Transaction[])
   const [hideNilTransactions] = useState(true)
+  const { isinMap, status: isinMapStatus } = UseIsinMap(transactions)
 
   useEffect(() => {
     async function setDefaultTransactions() {
@@ -49,10 +51,14 @@ function App() {
           </ul>
         </nav>
       </header>
+      {isinMapStatus === 'pending' ? 'Loading new figi symbols' : null}
+      {isinMapStatus === 'success' ? 'Figi symbols up to date' : null}
+      {isinMapStatus === 'error' ? 'Error while loading figi symbols' : null}
+
       {transactions.length ? (
         <Switch>
           <Route path="/traded-stocks">
-            <TradedSecurities transactions={transactions} />
+            <TradedSecurities transactions={transactions} isinMap={isinMap} />
           </Route>
           <Route path="/">
             <Home

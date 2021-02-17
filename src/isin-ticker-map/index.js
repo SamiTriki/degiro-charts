@@ -53,7 +53,6 @@ const fetchMissingIsins = async missingIsinArray => {
   try {
     figiresults = await getSecuritiesFromIsins(missingIsinArray)
   } catch (e) {
-    console.log(e)
     return {}
   }
 
@@ -89,7 +88,10 @@ export const UseIsinMap = transactions => {
 
   useEffect(() => {
     async function getMissinIsinData() {
-      let missingIsinsArray = getMissingIsinsArray(isinMap)
+      let missingIsinsArray = getMissingIsinsArray({
+        ...isinMap,
+        ...generateIsinMapFromTransactions(transactions),
+      })
 
       if (!missingIsinsArray.length) {
         setStatus('success')
