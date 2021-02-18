@@ -1,28 +1,29 @@
 import { getSecuritiesFromIsins } from './openFigiApi.ts'
 import { useEffect, useState, useCallback } from 'react'
 
-const generateIsinMapFromTransactions = transactions => {
+const getIsinMapFromTransactions = transactions => {
   return transactions.reduce((isinMap, t) => {
-    if (!t.isin) {
-      return isinMap
+    if (t.isin) {
+      return {
+        ...isinMap,
+        [t.isin]: null,
+      }
     }
-
-    return {
-      ...isinMap,
-      [t.isin]: null,
-    }
+    return isinMap
   }, {})
 }
 
 const getLocalIsinMap = () => {
   let localIsinMap
   try {
-    localIsinMap = JSON.parse(
-      window.localStorage.getItem('degirocharts.isinmap')
-    )
+    localIsinMap = JSON.parse(window.localStorage.getItem('degirocharts.isinmap'))
+    if (typeof localIsinMap !== 'object') {
+      return {}
+    }
+
     return localIsinMap
   } catch (e) {
-    return null
+    return {}
   }
 }
 
@@ -34,13 +35,13 @@ const deleteLocalIsinMap = () => {
   window.localStorage.removeItem('degirocharts.isinmap')
 }
 
-const getMissingIsinsArray = isinMap => {
-  return Object.entries(isinMap).reduce((missing, current) => {
+const getMissingSecuritiesIsins = isinMap => {
+  return Object.entries(isinMap).reduce((missingSecuritiesIsins, current) => {
     let [isin, attachedSecurity] = current
     if (attachedSecurity === null) {
-      return [...missing, isin]
+      return [...missingSecuritiesIsins, isin]
     }
-    return missing
+    return missingSecuritiesIsins
   }, [])
 }
 
@@ -49,15 +50,17 @@ const fetchMissingIsins = async missingIsinArray => {
   try {
     figiresults = await getSecuritiesFromIsins(missingIsinArray)
   } catch (e) {
+    console.error('error while fetching missing securities', e)
     return {}
   }
 
-  let missingIsinsMap = missingIsinArray.reduce((all, isin, index) => {
-    let security = figiresults[index] ? { ...figiresults[index], isin } : null
+  // Go through the missing isins and find the associated security in the results, then generate an isin map from it
+  const missingIsinsMap = missingIsinArray.reduce((all, isin, index) => {
+    const security = figiresults[index] ? { ...figiresults[index], isin } : null
 
     return {
       ...all,
-      [isin]: security || { message: 'could not find isin', isin },
+      [isin]: security || { message: 'could not find associated security', isin },
     }
   }, {})
 
@@ -66,36 +69,34 @@ const fetchMissingIsins = async missingIsinArray => {
 
 const UseIsinMap = transactions => {
   const [isinMap, setIsinMap] = useState(() => {
-    const isinMapFromTransactions = generateIsinMapFromTransactions(
-      transactions
-    )
-    const localIsinMap = getLocalIsinMap()
-
-    if (localIsinMap === null) {
-      return isinMapFromTransactions
-    }
-
-    return { ...isinMapFromTransactions, ...localIsinMap }
+    // Always override with localIsinMap
+    return { ...getIsinMapFromTransactions(transactions), ...getLocalIsinMap() }
   })
+
   const [newlyAddedIsin, setNewlyAddedIsin] = useState(null)
   const [status, setStatus] = useState('idle')
 
   useEffect(() => {
-    async function getMissinIsinData() {
-      let missingIsinsArray = getMissingIsinsArray({
-        ...generateIsinMapFromTransactions(transactions),
-        ...isinMap, // TODO: test that when we already have data in the isin map, it's not refetched
+    async function getMissingSecuritiesData() {
+      /**
+       * Add Isins generated from transactions in case transactions change
+       * and new ones are added
+       * TODO: Test this
+       */
+      const missingIsinsArray = getMissingSecuritiesIsins({
+        ...getIsinMapFromTransactions(transactions),
+        ...isinMap,
       })
 
       if (!missingIsinsArray.length) {
         setStatus('success')
-        console.log('no isins to update')
+        console.info('Isins map up to date, all symbols should show correctly')
         return
       }
 
       try {
         setStatus('pending')
-        let missingIsinsMap = await fetchMissingIsins(missingIsinsArray)
+        const missingIsinsMap = await fetchMissingIsins(missingIsinsArray)
         setIsinMap(currentIsinMap => ({
           ...currentIsinMap,
           ...missingIsinsMap,
@@ -105,11 +106,10 @@ const UseIsinMap = transactions => {
         setStatus('success')
       } catch (e) {
         setStatus('error')
-        console.log('error while fetching isins')
         console.error(e)
       }
     }
-    getMissinIsinData()
+    getMissingSecuritiesData()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [transactions])
 
