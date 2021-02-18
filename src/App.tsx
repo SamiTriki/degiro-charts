@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { BrowserRouter as Router, Switch, Route, Link } from 'react-router-dom'
 import { ReactComponent as Logo } from './logo.svg'
-import { UseIsinMap } from './IsinMap/index.js'
+import { UseIsinMap } from './IsinMap/index'
 
 import { readString } from 'react-papaparse'
 import { getTransactionsFromCSV } from './csvUtils'
@@ -14,13 +14,21 @@ import './App.css'
 
 const papaConfig = { header: true }
 
-const getLocalTransactions = () =>
-  fetch('./Account.csv').then(res => res.text())
+const getLocalTransactions = () => fetch('./Account.csv').then(res => res.text())
 
 function App() {
   const [transactions, setTransactions] = useState([] as Transaction[])
   const [hideNilTransactions] = useState(true)
-  const { isinMap, status: isinMapStatus } = UseIsinMap(transactions)
+  const { isinMap, status: isinMapStatus, onNewIsinAdded } = UseIsinMap(transactions)
+
+  onNewIsinAdded(newlyAddedIsins =>
+    console.info(
+      'newly added isins',
+      Object.values(newlyAddedIsins).map(security => {
+        return security.name
+      })
+    )
+  )
 
   useEffect(() => {
     async function setDefaultTransactions() {

@@ -10,7 +10,7 @@ import { OpenFigiSecurity } from './types'
 const CORS_PROXY_URL = 'https://cors-anywhere.herokuapp.com/'
 
 export function getSecuritiesFromIsins(
-  isinArray: Array<any>
+  isinArray: Array<string>
 ): Promise<OpenFigiSecurity[]> {
   let requestBody = isinArray.map(isin => ({
     idType: 'ID_ISIN',

@@ -1,8 +1,10 @@
-import { getSecuritiesFromIsins } from './openFigiApi.ts'
 import { useEffect, useState, useCallback } from 'react'
+import { getSecuritiesFromIsins } from './openFigiApi'
+import { Transaction } from './../transactionUtils'
+import { IsinMap, OpenFigiSecurity, looksLikeOpenFigiSecurity } from './types'
 
-const getIsinMapFromTransactions = transactions => {
-  return transactions.reduce((isinMap, t) => {
+const getIsinMapFromTransactions = (transactions: Transaction[]) => {
+  return transactions.reduce((isinMap, t): IsinMap => {
     if (t.isin) {
       return {
         ...isinMap,
@@ -10,13 +12,13 @@ const getIsinMapFromTransactions = transactions => {
       }
     }
     return isinMap
-  }, {})
+  }, {} as IsinMap)
 }
 
 const getLocalIsinMap = () => {
-  let localIsinMap
+  let localIsinMap: IsinMap
   try {
-    localIsinMap = JSON.parse(window.localStorage.getItem('degirocharts.isinmap'))
+    localIsinMap = JSON.parse(window.localStorage.getItem('degirocharts.isinmap') || '')
     if (typeof localIsinMap !== 'object') {
       return {}
     }
@@ -27,7 +29,7 @@ const getLocalIsinMap = () => {
   }
 }
 
-const saveLocalIsinMap = isinMap => {
+const saveLocalIsinMap = (isinMap: IsinMap) => {
   window.localStorage.setItem('degirocharts.isinmap', JSON.stringify(isinMap))
 }
 
@@ -35,8 +37,8 @@ const deleteLocalIsinMap = () => {
   window.localStorage.removeItem('degirocharts.isinmap')
 }
 
-const getMissingSecuritiesIsins = isinMap => {
-  return Object.entries(isinMap).reduce((missingSecuritiesIsins, current) => {
+const getMissingSecuritiesIsins = (isinMap: IsinMap): string[] => {
+  return Object.entries(isinMap).reduce((missingSecuritiesIsins: string[], current) => {
     let [isin, attachedSecurity] = current
     if (attachedSecurity === null) {
       return [...missingSecuritiesIsins, isin]
@@ -45,8 +47,8 @@ const getMissingSecuritiesIsins = isinMap => {
   }, [])
 }
 
-const fetchMissingIsins = async missingIsinArray => {
-  let figiresults
+const fetchMissingIsins = async (missingIsinArray: string[]) => {
+  let figiresults: OpenFigiSecurity[]
   try {
     figiresults = await getSecuritiesFromIsins(missingIsinArray)
   } catch (e) {
@@ -55,25 +57,47 @@ const fetchMissingIsins = async missingIsinArray => {
   }
 
   // Go through the missing isins and find the associated security in the results, then generate an isin map from it
-  const missingIsinsMap = missingIsinArray.reduce((all, isin, index) => {
-    const security = figiresults[index] ? { ...figiresults[index], isin } : null
+  const missingIsinsMap = missingIsinArray.reduce(
+    (isinMap, isin, index: number): IsinMap => {
+      const security = figiresults[index] ? { ...figiresults[index], isin } : null
 
-    return {
-      ...all,
-      [isin]: security || { message: 'could not find associated security', isin },
-    }
-  }, {})
+      return {
+        ...isinMap,
+        [isin]: security || { message: 'could not find associated security', isin },
+      }
+    },
+    {} as IsinMap
+  )
 
   return missingIsinsMap
 }
 
-const UseIsinMap = transactions => {
+// Is this overkill? Probably, toying with typeguards
+// This function cleans out null props or errors from the newly added isin to provide only cleanly added
+// securities to the callback
+// needs more thinking, we might want to display errors at some point, but this is good to know I can do this
+const FilterMissingAndErrorIsins = (
+  isinMap: IsinMap
+): Record<string, OpenFigiSecurity> => {
+  return Object.entries(isinMap).reduce((filteredIsinMap, [isin, security]) => {
+    if (looksLikeOpenFigiSecurity(security)) {
+      return {
+        ...filteredIsinMap,
+        [isin]: security,
+      }
+    } else {
+      return filteredIsinMap
+    }
+  }, {} as Record<string, OpenFigiSecurity>)
+}
+
+const UseIsinMap = (transactions: Transaction[]) => {
   const [isinMap, setIsinMap] = useState(() => {
     // Always override with localIsinMap
     return { ...getIsinMapFromTransactions(transactions), ...getLocalIsinMap() }
   })
 
-  const [newlyAddedIsin, setNewlyAddedIsin] = useState(null)
+  const [newlyAddedIsin, setNewlyAddedIsin] = useState({} as IsinMap)
   const [status, setStatus] = useState('idle')
 
   useEffect(() => {
@@ -114,9 +138,9 @@ const UseIsinMap = transactions => {
   }, [transactions])
 
   const onNewIsinAdded = useCallback(
-    cb => {
-      if (newlyAddedIsin !== null) {
-        cb(newlyAddedIsin)
+    (cb: (arg0: Record<string, OpenFigiSecurity>) => unknown) => {
+      if (Object.entries(newlyAddedIsin).length) {
+        cb(FilterMissingAndErrorIsins(newlyAddedIsin))
       }
     },
     [newlyAddedIsin]

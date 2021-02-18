@@ -13,4 +13,35 @@ export interface OpenFigiSecurity {
   isin?: string
 }
 
-export type IsinMap = Record<string, OpenFigiSecurity>
+export function looksLikeOpenFigiSecurity(object: any): object is OpenFigiSecurity {
+  let expectedProps = [
+    'name',
+    'ticker',
+    'exchCode',
+    'securityType',
+    'securityType2',
+    'securityDescription',
+    'marketSector',
+    'isin',
+  ]
+
+  return expectedProps.reduce(
+    (isObjectOpenFigiSecurity: boolean, expectedProp: string) => {
+      if (!isObjectOpenFigiSecurity) {
+        // return immediately if one of the props isn't found
+        return false
+      }
+
+      return object.hasOwnProperty(expectedProp)
+    },
+    true
+  )
+}
+
+type missingIsinError = {
+  message: string
+  isin: string
+}
+type isin = string
+
+export type IsinMap = Record<isin, OpenFigiSecurity | missingIsinError | null>
