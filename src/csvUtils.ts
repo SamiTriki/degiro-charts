@@ -21,7 +21,7 @@ const csvDateToString = (date: Date): string => {
   return `${year}-${month}-${day}`
 }
 
-function transactionsFromCSV(CSVResults: any[]): Transaction[] {
+function getTransactionsFromCSV(CSVResults: any[]): Transaction[] {
   let transactions: Transaction[] = CSVResults.filter(t => t)
     .filter(t => t.Date && t.Time)
     .map(transaction => {
@@ -49,4 +49,4 @@ function transactionsFromCSV(CSVResults: any[]): Transaction[] {
   return decorateTransactions(transactions)
 }
 
-export { transactionsFromCSV }
+export { getTransactionsFromCSV }

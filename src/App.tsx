@@ -1,31 +1,40 @@
-import React from 'react'
 import { useEffect, useState } from 'react'
 import { BrowserRouter as Router, Switch, Route, Link } from 'react-router-dom'
 import { ReactComponent as Logo } from './logo.svg'
+import { UseIsinMap } from './IsinMap/index'
 
 import { readString } from 'react-papaparse'
-import { transactionsFromCSV } from './csvUtils'
+import { getTransactionsFromCSV } from './csvUtils'
 import { Transaction } from './transactionUtils'
 
-import Home from './Home'
-import TradedSecurities from './TradedSecurities'
+import Home from './views/Home'
+import TradedSecurities from './views/TradedSecurities'
 
 import './App.css'
 
 const papaConfig = { header: true }
 
-const getLocalTransactions = () =>
-  fetch('./Account.csv').then(res => res.text())
+const getLocalTransactions = () => fetch('./Account.csv').then(res => res.text())
 
 function App() {
   const [transactions, setTransactions] = useState([] as Transaction[])
   const [hideNilTransactions] = useState(true)
+  const { isinMap, status: isinMapStatus, onNewIsinAdded } = UseIsinMap(transactions)
+
+  onNewIsinAdded(newlyAddedIsins =>
+    console.info(
+      'newly added isins',
+      Object.values(newlyAddedIsins).map(security => {
+        return security.name
+      })
+    )
+  )
 
   useEffect(() => {
     async function setDefaultTransactions() {
       const csvString = await getLocalTransactions()
       const parsedTransactions = readString(csvString, papaConfig).data
-      setTransactions(transactionsFromCSV(parsedTransactions))
+      setTransactions(getTransactionsFromCSV(parsedTransactions))
     }
 
     setDefaultTransactions()
@@ -49,10 +58,14 @@ function App() {
           </ul>
         </nav>
       </header>
+      {isinMapStatus === 'pending' ? 'Loading new figi symbols' : null}
+      {isinMapStatus === 'success' ? 'Figi symbols up to date' : null}
+      {isinMapStatus === 'error' ? 'Error while loading figi symbols' : null}
+
       {transactions.length ? (
         <Switch>
           <Route path="/traded-stocks">
-            <TradedSecurities transactions={transactions} />
+            <TradedSecurities transactions={transactions} isinMap={isinMap} />
           </Route>
           <Route path="/">
             <Home

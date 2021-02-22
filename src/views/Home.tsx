@@ -1,13 +1,12 @@
 import { useState } from 'react'
 
 import { CSVReader } from 'react-papaparse'
-import Chart from './Chart'
-import TransactionsList from './TransactionsList'
+import Chart from '../components/Chart'
+import TransactionsList from '../components/TransactionsList'
+import AccountSummary from '../components/AccountSummary'
 
-import './App.css'
-import AccountSummary from './AccountSummary'
-import { transactionsFromCSV } from './csvUtils'
-import { Transaction } from './transactionUtils'
+import { getTransactionsFromCSV } from '../csvUtils'
+import { Transaction } from '../transactionUtils'
 
 const papaConfig = { header: true }
 
@@ -26,7 +25,7 @@ function Home({
 
   const handleOnDrop = (results: any[]) => {
     setCsvParsingError(false)
-    setTransactions(transactionsFromCSV(results.map(r => r.data)))
+    setTransactions(getTransactionsFromCSV(results.map(r => r.data)))
   }
 
   const handleOnError = (err: any) => {

@@ -13,3 +13,18 @@ Features in progress:
 - More charts
 - Plot my transactions on actual stock price chart. Looking at a stock price chart I want to see the exact moment I bought/sold.
 - make it pretty
+
+### Development
+
+How I'm trying to organise, this is likely to change
+
+```
+
+- src
+-- [components]: View components with display logic only
+-- [views]: App pages, integrates view components and page specific logic
+-- [IsinMap]: Business logic for managing missing isin lookup
+-- App.tsx: Root app, includes app wide business logic
+-- TransactionUtils.ts Doesn't have a home yet, transactions related helpers
+-- CsvUtils.ts Doesn't have a home yet, Csv parsing related helpers
+```

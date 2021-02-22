@@ -1,60 +1,36 @@
 import { useState } from 'react'
-import { Transaction } from './transactionUtils'
-import { OpenFigiSecurity, TradedSecurity } from './TradedSecuritiesUtils'
+import { Transaction } from '../transactionUtils'
+import { searchOpenFigi } from '../IsinMap/openFigiApi'
+import { OpenFigiSecurity, IsinMap } from '../IsinMap/types'
 
-const CORS_PROXY_URL = 'https://cors-anywhere.herokuapp.com/'
-
-function searchOpenFigi(isin: string): Promise<OpenFigiSecurity[]> {
-  // TODO: Use own middleware as proxy for openfigi and keep isin/symbol mapping there
-  return window
-    .fetch(CORS_PROXY_URL + 'https://api.openfigi.com/v2/mapping', {
-      method: 'POST',
-      headers: new Headers({
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      }),
-      body: JSON.stringify([{ idType: 'ID_ISIN', idValue: isin }]),
-    })
-    .then(res => {
-      if (!res.ok) {
-        const { statusText, status, type } = res
-        throw new Error(
-          `An error occured while fetching openfigi data [${type}]${status}:${statusText}`
-        )
-      }
-
-      return res.json()
-    })
-    .then(openFigiJSON => {
-      // flatten figi map response
-      return openFigiJSON.map(
-        (figi: Record<string, OpenFigiSecurity[]>) => figi.data[0]
-      )
-    })
+/**
+ * @description Represents a security that has been traded extracted from the transactions list, it's local to the csv
+ * it's used to search securities online so that their information can be completed, they have no other use besides searching for more info
+ */
+interface TradedSecurity {
+  isin: string
+  name: string
 }
 
-interface TradedSecuritiesProps {
-  transactions: Transaction[]
-}
 /**
  *
  * We want to find ticker symbols associated with an isin
  * we initially want a function that analyses the ISIN in our transactions and
  * associate it with "known symbols"
  *
- * Phase 1
+ * Phase 1 ✅
  *
- * We are going to toy around with a search to find ticker symbols results given an isin number and set data types and expecations ✅
+ * We are going to toy around with a search to find ticker symbols results given an isin number and set data types and expecations
  *
- * Phase 2
+ * Phase 2 ✅
  *
  * We are going to automate ticker retrieval by querying openfigi data and mapping our isin / ticker with the first result found
  * We also want to cache a ISIN / Stock ticker map in localstorage so that we can use it instead of querying openfigi unnecessarily for known ISIN
  * we will do this when the app loads: check all transactions, if an isin is not in our isin map then fetch it and add it to the map.
- * Handle errors, do not refetch if an isin is not found, instead add an error that can be manually corrected later on
  *
  * Phase 3
  *
+ * Handle errors, do not refetch if an isin is not found, instead add an error that can be manually corrected later on
  * Offer our user a way to change the ticker associated with the ISIN in case the default one doesn't work or an error occured while fetching the data
  * by offering all other openfigi results as options to chose from, update our map with the right ticker and save
  *
@@ -66,11 +42,18 @@ interface TradedSecuritiesProps {
  *
  * Phase 5 refactoring ?
  * Use react error boundary
- * Use react-query
+ * Refactor UseIsinMap
+ * Use react-query ?? no necessary given the fact that there's little server state
  * Find the right abstraction for search results, errors ect
  */
+interface TradedSecuritiesProps {
+  transactions: Transaction[]
+  isinMap: IsinMap
+}
+
 export default function TradedSecurities({
   transactions,
+  isinMap,
 }: TradedSecuritiesProps) {
   const [searchResults, setSearchResults] = useState([] as OpenFigiSecurity[])
   const [fetchError, setFetchError] = useState(null as any)
@@ -124,6 +107,7 @@ export default function TradedSecurities({
             onClick={() => onSelectSecurity(security)}
           >
             {security.name}
+            <pre>{JSON.stringify(isinMap[security.isin], null, ' ')}</pre>
           </button>
         )
       })}
