@@ -92,8 +92,8 @@ export default function TradedSecurities({
     <pre>{JSON.stringify(searchResults[0], null, '  ')}</pre>
   ) : (
     <pre>
-      No results found on openFigi for that ISIN, what a bad luck (we might
-      offer broader search in the future might might)
+      No results found on openFigi for that ISIN, what a bad luck (we might offer broader
+      search in the future might might)
     </pre>
   )
 
@@ -102,12 +102,11 @@ export default function TradedSecurities({
       <p>Currently traded securities:</p>
       {Object.values(securities).map(security => {
         return (
-          <button
-            key={security.isin}
-            onClick={() => onSelectSecurity(security)}
-          >
+          <button key={security.isin} onClick={() => onSelectSecurity(security)}>
             {security.name}
-            <pre>{JSON.stringify(isinMap[security.isin], null, ' ')}</pre>
+            <pre>
+              {isinMap ? JSON.stringify(isinMap[security.isin], null, ' ') : null}
+            </pre>
           </button>
         )
       })}
@@ -116,9 +115,7 @@ export default function TradedSecurities({
       ) : status === 'resolved' ? (
         <pre>{results}</pre>
       ) : status === 'error' ? (
-        <div style={{ color: 'red' }}>
-          Something went wrong {fetchError?.message}
-        </div>
+        <div style={{ color: 'red' }}>Something went wrong {fetchError?.message}</div>
       ) : status === 'pending' ? (
         <div>...</div>
       ) : null}
