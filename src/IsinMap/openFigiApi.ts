@@ -7,8 +7,6 @@ import { OpenFigiSecurity } from './types'
  * all *10 with api key
  */
 
-const CORS_PROXY_URL = 'https://cors-anywhere.herokuapp.com/'
-
 export function getSecuritiesFromIsins(
   isinArray: Array<string>
 ): Promise<OpenFigiSecurity[]> {
@@ -18,7 +16,7 @@ export function getSecuritiesFromIsins(
   }))
 
   return window
-    .fetch(CORS_PROXY_URL + 'https://api.openfigi.com/v2/mapping', {
+    .fetch(process.env.REACT_APP_OPENFIGI_API_URL + '/mapping', {
       method: 'POST',
       headers: {
         Accept: 'application/json',
@@ -47,7 +45,7 @@ export function getSecuritiesFromIsins(
 export function searchOpenFigi(isin: string): Promise<OpenFigiSecurity[]> {
   // TODO: Use own middleware as proxy for openfigi and keep isin/symbol mapping there
   return window
-    .fetch(CORS_PROXY_URL + 'https://api.openfigi.com/v2/mapping', {
+    .fetch(process.env.REACT_APP_OPENFIGI_API_URL + '/mapping', {
       method: 'POST',
       headers: {
         Accept: 'application/json',
