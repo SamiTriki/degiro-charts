@@ -1,7 +1,14 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useReducer } from 'react'
 import { getSecuritiesFromIsins } from './openFigiApi'
 import { Transaction } from './../transactionUtils'
 import { IsinMap, OpenFigiSecurity, looksLikeOpenFigiSecurity } from './types'
+
+/**
+ * TODO:
+ * - Add node middleware to repo cache isinMap, forward requests to openfigi
+ * - Handle openfigi key and limits
+ * - Add fetch wrapper if I repeat requests for other apis than openFigi
+ */
 
 const getIsinMapFromTransactions = (transactions: Transaction[]) => {
   return transactions.reduce((isinMap, t): IsinMap => {
@@ -91,14 +98,37 @@ const FilterMissingAndErrorIsins = (
   }, {} as Record<string, OpenFigiSecurity>)
 }
 
+type UseIsinMapState = {
+  status: string
+  isinMap: IsinMap
+}
+
+function isinMapReducer(prevState: UseIsinMapState, action: any) {
+  switch (action.type) {
+    case 'SUCCESS':
+      return { ...prevState, status: 'success' }
+    case 'PENDING':
+      return { ...prevState, status: 'pending' }
+    case 'ERROR':
+      return { ...prevState, status: 'error', error: action.error }
+    case 'NEW_ISIN_DATA':
+      return {
+        ...prevState,
+        isinMap: { ...prevState.isinMap, ...action.payload },
+      }
+    default:
+      return prevState
+  }
+}
+
+// actions: new isins, isins complete, isin fetching errors,
 const UseIsinMap = (transactions: Transaction[]) => {
-  const [isinMap, setIsinMap] = useState(() => {
-    // Always override with localIsinMap
-    return { ...getIsinMapFromTransactions(transactions), ...getLocalIsinMap() }
+  const [{ isinMap, status }, dispatch] = useReducer(isinMapReducer, {
+    status: 'idle',
+    isinMap: { ...getIsinMapFromTransactions(transactions), ...getLocalIsinMap() },
   })
 
   const [newlyAddedIsin, setNewlyAddedIsin] = useState({} as IsinMap)
-  const [status, setStatus] = useState('idle')
 
   useEffect(() => {
     async function getMissingSecuritiesData() {
@@ -113,23 +143,21 @@ const UseIsinMap = (transactions: Transaction[]) => {
       })
 
       if (!missingIsinsArray.length) {
-        setStatus('success')
+        dispatch({ type: 'SUCCESS' })
         console.info('Isins map up to date, all symbols should show correctly')
         return
       }
 
       try {
-        setStatus('pending')
+        dispatch({ type: 'PENDING' })
         const missingIsinsMap = await fetchMissingIsins(missingIsinsArray)
-        setIsinMap(currentIsinMap => ({
-          ...currentIsinMap,
-          ...missingIsinsMap,
-        }))
+        dispatch({ type: 'NEW_ISIN_DATA', payload: missingIsinsMap })
+        saveLocalIsinMap(isinMap)
+
         setNewlyAddedIsin({ ...missingIsinsMap })
-        saveLocalIsinMap({ ...isinMap, ...missingIsinsMap })
-        setStatus('success')
+        dispatch({ type: 'SUCCESS' })
       } catch (e) {
-        setStatus('error')
+        dispatch({ type: 'ERROR', error: e })
         console.error(e)
       }
     }
