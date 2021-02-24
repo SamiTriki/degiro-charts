@@ -7,7 +7,12 @@ import { OpenFigiSecurity } from './types'
  * all *10 with api key
  */
 
-const CORS_PROXY_URL = 'https://cors-anywhere.herokuapp.com/'
+ /**
+  * TODO:
+  * - Add node middleware to repo cache isinMap, forward requests to openfigi
+  * - Handle openfigi key and limits
+  * - Add fetch wrapper if I repeat requests for other apis than openFigi
+  */
 
 export function getSecuritiesFromIsins(
   isinArray: Array<string>
@@ -18,8 +23,8 @@ export function getSecuritiesFromIsins(
   }))
 
   return window
-    .fetch(CORS_PROXY_URL + 'https://api.openfigi.com/v2/mapping', {
-      method: 'POST',
+  .fetch(`${process.env.REACT_APP_OPENFIGI_API_URL}/mapping`, {
+    method: 'POST',
       headers: {
         Accept: 'application/json',
         'Content-Type': 'application/json',
@@ -45,9 +50,8 @@ export function getSecuritiesFromIsins(
 }
 
 export function searchOpenFigi(isin: string): Promise<OpenFigiSecurity[]> {
-  // TODO: Use own middleware as proxy for openfigi and keep isin/symbol mapping there
   return window
-    .fetch(CORS_PROXY_URL + 'https://api.openfigi.com/v2/mapping', {
+    .fetch(`${process.env.REACT_APP_OPENFIGI_API_URL}/mapping`, {
       method: 'POST',
       headers: {
         Accept: 'application/json',
