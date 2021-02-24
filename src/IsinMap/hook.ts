@@ -1,7 +1,12 @@
-import { useEffect, useState, useCallback, useReducer } from 'react'
+import { useEffect, useCallback, useReducer, useRef } from 'react'
 import { getSecuritiesFromIsins } from './openFigiApi'
 import { Transaction } from './../transactionUtils'
 import { IsinMap, OpenFigiSecurity, looksLikeOpenFigiSecurity } from './types'
+import { chunk } from './chunk'
+import { throttle } from './throttle'
+
+const DELAY_BETWEEN_REQUESTS_MS = 2400
+const MAX_JOBS_PER_REQUEST = 10
 
 /**
  * TODO:
@@ -9,6 +14,11 @@ import { IsinMap, OpenFigiSecurity, looksLikeOpenFigiSecurity } from './types'
  * - Handle openfigi key and limits
  * - Add fetch wrapper if I repeat requests for other apis than openFigi
  */
+
+function getChunkedFetchIsinMap(isinArray: Array<string>) {
+  const chunked = chunk(isinArray, MAX_JOBS_PER_REQUEST)
+  return chunked.map((isinsArray: Array<string>) => () => fetchMissingIsins(isinsArray))
+}
 
 const getIsinMapFromTransactions = (transactions: Transaction[]) => {
   return transactions.reduce((isinMap, t): IsinMap => {
@@ -101,6 +111,7 @@ const FilterMissingAndErrorIsins = (
 type UseIsinMapState = {
   status: string
   isinMap: IsinMap
+  newlyAddedIsin: IsinMap
 }
 
 function isinMapReducer(prevState: UseIsinMapState, action: any) {
@@ -114,6 +125,7 @@ function isinMapReducer(prevState: UseIsinMapState, action: any) {
     case 'NEW_ISIN_DATA':
       return {
         ...prevState,
+        newlyAddedIsin: action.payload,
         isinMap: { ...prevState.isinMap, ...action.payload },
       }
     default:
@@ -123,12 +135,13 @@ function isinMapReducer(prevState: UseIsinMapState, action: any) {
 
 // actions: new isins, isins complete, isin fetching errors,
 const UseIsinMap = (transactions: Transaction[]) => {
-  const [{ isinMap, status }, dispatch] = useReducer(isinMapReducer, {
+  const [{ isinMap, status, newlyAddedIsin }, dispatch] = useReducer(isinMapReducer, {
     status: 'idle',
     isinMap: { ...getIsinMapFromTransactions(transactions), ...getLocalIsinMap() },
+    newlyAddedIsin: {},
   })
 
-  const [newlyAddedIsin, setNewlyAddedIsin] = useState({} as IsinMap)
+  const newlyAddedIsinRef = useRef(newlyAddedIsin)
 
   useEffect(() => {
     async function getMissingSecuritiesData() {
@@ -142,6 +155,11 @@ const UseIsinMap = (transactions: Transaction[]) => {
         ...isinMap,
       })
 
+      if (!missingIsinsArray.length && !transactions.length) {
+        // Bailing out, nothing to do
+        return
+      }
+
       if (!missingIsinsArray.length) {
         dispatch({ type: 'SUCCESS' })
         console.info('Isins map up to date, all symbols should show correctly')
@@ -150,12 +168,29 @@ const UseIsinMap = (transactions: Transaction[]) => {
 
       try {
         dispatch({ type: 'PENDING' })
-        const missingIsinsMap = await fetchMissingIsins(missingIsinsArray)
-        dispatch({ type: 'NEW_ISIN_DATA', payload: missingIsinsMap })
-        saveLocalIsinMap(isinMap)
 
-        setNewlyAddedIsin({ ...missingIsinsMap })
-        dispatch({ type: 'SUCCESS' })
+        const chunkedPromises = getChunkedFetchIsinMap(missingIsinsArray)
+
+        await throttle(chunkedPromises, {
+          delay: DELAY_BETWEEN_REQUESTS_MS,
+          onNewResults: missingIsinMap => {
+            dispatch({ type: 'NEW_ISIN_DATA', payload: missingIsinMap })
+            saveLocalIsinMap(isinMap)
+
+            /**
+             * When any action is dispatched, the state changes and the value of newlyAddedIsin is not the same reference
+             * which re triggers the onNewIsinAdded callback.
+             * Keep the newly added isin as a ref to compare them before executing the callback
+             * */
+            newlyAddedIsinRef.current = missingIsinMap
+          },
+          onNewError: error => {
+            // new state for partial errors
+          },
+          onDone: () => {
+            dispatch({ type: 'SUCCESS' })
+          },
+        })
       } catch (e) {
         dispatch({ type: 'ERROR', error: e })
         console.error(e)
@@ -166,9 +201,14 @@ const UseIsinMap = (transactions: Transaction[]) => {
   }, [transactions])
 
   const onNewIsinAdded = useCallback(
-    (cb: (arg0: Record<string, OpenFigiSecurity>) => unknown) => {
+    (cb: (newlyAddedIsin: Record<string, OpenFigiSecurity>) => void) => {
+      if (newlyAddedIsinRef.current === newlyAddedIsin) {
+        return
+      }
+
       if (Object.entries(newlyAddedIsin).length) {
-        cb(FilterMissingAndErrorIsins(newlyAddedIsin))
+        const filteredIsinMap = FilterMissingAndErrorIsins(newlyAddedIsin)
+        cb(filteredIsinMap)
       }
     },
     [newlyAddedIsin]
