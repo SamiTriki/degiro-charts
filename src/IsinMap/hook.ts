@@ -175,8 +175,6 @@ const UseIsinMap = (transactions: Transaction[]) => {
           delay: DELAY_BETWEEN_REQUESTS_MS,
           onNewResults: missingIsinMap => {
             dispatch({ type: 'NEW_ISIN_DATA', payload: missingIsinMap })
-            saveLocalIsinMap(isinMap)
-
             /**
              * When any action is dispatched, the state changes and the value of newlyAddedIsin is not the same reference
              * which re triggers the onNewIsinAdded callback.
@@ -199,6 +197,10 @@ const UseIsinMap = (transactions: Transaction[]) => {
     getMissingSecuritiesData()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [transactions])
+
+  useEffect(() => {
+    saveLocalIsinMap(isinMap)
+  }, [isinMap])
 
   const onNewIsinAdded = useCallback(
     (cb: (newlyAddedIsin: Record<string, OpenFigiSecurity>) => void) => {
