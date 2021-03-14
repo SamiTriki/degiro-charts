@@ -14,12 +14,6 @@ const MAX_JOBS_PER_REQUEST = 10
  * - Handle openfigi key and limits
  * - Add fetch wrapper if I repeat requests for other apis than openFigi
  */
-
-function getChunkedFetchIsinMap(isinArray: Array<string>) {
-  const chunked = chunk(isinArray, MAX_JOBS_PER_REQUEST)
-  return chunked.map((isinsArray: Array<string>) => () => fetchMissingIsins(isinsArray))
-}
-
 const getIsinMapFromTransactions = (transactions: Transaction[]) => {
   return transactions.reduce((isinMap, t): IsinMap => {
     if (t.isin) {
@@ -133,8 +127,10 @@ const UseIsinMap = (transactions: Transaction[]) => {
 
       try {
         dispatch({ type: 'PENDING' })
-
-        const chunkedPromises = getChunkedFetchIsinMap(missingIsinsArray)
+        const chunked = chunk(missingIsinsArray, MAX_JOBS_PER_REQUEST)
+        const chunkedPromises = chunked.map((isinsArray: Array<string>) => () =>
+          fetchMissingIsins(isinsArray)
+        )
 
         await throttle(chunkedPromises, {
           delay: DELAY_BETWEEN_REQUESTS_MS,
