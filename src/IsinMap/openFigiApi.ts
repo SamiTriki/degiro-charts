@@ -16,34 +16,32 @@ type OpenFigiMappingRequestBody = {
   idValue: string
 }
 
-export function getFirstSecurityFromIsinList(
-  isinArray: Array<string>
-): Promise<OpenFigiSecurity[]> {
+export async function getFirstSecurityFromIsinList(isinArray: Array<string>) {
   const requestBody = isinArray.map(isin => ({
     idType: 'ID_ISIN',
     idValue: isin,
   }))
 
-  return fetchOpenFigiMapping(requestBody).then(openFigiJSON => {
-    return openFigiJSON.map(figiDataForIsin => figiDataForIsin[0])
-  })
+  const securitiesList = await fetchOpenFigiMapping(requestBody)
+
+  return securitiesList.map(openFigiSecuritiesForIsin => openFigiSecuritiesForIsin[0])
+}
+
+export async function getAllSecuritiesFromIsin(isin: string) {
+  const requestBody = [{ idType: 'ID_ISIN', idValue: isin }]
+
+  const securitiesList = await fetchOpenFigiMapping(requestBody)
+
+  return securitiesList[0]
 }
 
 // Will return the first security returned by the openFigi api when doing an ISIN lookup
-export function getFirstSecurityFromIsin(isin: string): Promise<OpenFigiSecurity> {
+export async function getFirstSecurityFromIsin(isin: string) {
   const requestBody = [{ idType: 'ID_ISIN', idValue: isin }]
 
-  return fetchOpenFigiMapping(requestBody).then(openFigiJSON => {
-    return openFigiJSON[0][0]
-  })
-}
+  const securitiesList = await fetchOpenFigiMapping(requestBody)
 
-export function getAllSecuritiesFromIsin(isin: string): Promise<OpenFigiSecurity[]> {
-  const requestBody = [{ idType: 'ID_ISIN', idValue: isin }]
-
-  return fetchOpenFigiMapping(requestBody).then(openFigiJSON => {
-    return openFigiJSON[0]
-  })
+  return securitiesList[0][0]
 }
 
 function fetchOpenFigiMapping(requestBody: OpenFigiMappingRequestBody[]) {

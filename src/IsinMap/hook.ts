@@ -1,7 +1,7 @@
 import { useEffect, useReducer } from 'react'
 import { getFirstSecurityFromIsinList } from './openFigiApi'
 import { Transaction } from './../transactionUtils'
-import { IsinMap, OpenFigiSecurity } from './types'
+import { IsinMap } from './types'
 import { chunk } from './chunk'
 import { throttle } from './throttle'
 
