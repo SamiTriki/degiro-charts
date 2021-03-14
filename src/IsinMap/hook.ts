@@ -30,6 +30,29 @@ const getIsinMapFromTransactions = (transactions: Transaction[]) => {
   }, {} as IsinMap)
 }
 
+const getIsinMapFromMissingIsins = async (missingIsinsArray: string[]) => {
+  try {
+    const securitiesList = await getFirstSecurityFromIsinList(missingIsinsArray)
+    const missingIsinsMap: IsinMap = {}
+
+    missingIsinsArray.forEach((isin, idx) => {
+      if (!securitiesList[idx]) {
+        return
+      }
+
+      missingIsinsMap[isin] = securitiesList[idx]
+    })
+
+    return missingIsinsMap
+  } catch (e) {
+    console.error(
+      `Error while getting securities for following isins ${missingIsinsArray}`,
+      e
+    )
+    return {}
+  }
+}
+
 const getLocalStorageIsinMap = () => {
   let localIsinMap: IsinMap
   try {
@@ -82,78 +105,51 @@ const UseIsinMap = (transactions: Transaction[]) => {
     isinMap: { ...getIsinMapFromTransactions(transactions), ...getLocalStorageIsinMap() },
   })
 
+  /**
+   * Fetch securities from the api when new transactions are added
+   */
   useEffect(() => {
-    async function getMissingSecuritiesData() {
-      /**
-       * Add Isins generated from transactions in case transactions change
-       * and new ones are added
-       * TODO: Test this
-       */
-      const missingIsinsArray = getMissingIsins({
-        ...getIsinMapFromTransactions(transactions),
-        ...isinMap,
-      })
+    /**
+     * Add Isins generated from transactions in case transactions change
+     * and new ones are added
+     * TODO: Test this
+     */
+    const missingIsinsArray = getMissingIsins({
+      ...getIsinMapFromTransactions(transactions),
+      ...isinMap,
+    })
 
-      if (!missingIsinsArray.length && !transactions.length) {
-        // Bailing out, nothing to do
-        return
-      }
-
-      if (!missingIsinsArray.length) {
-        dispatch({ type: 'SUCCESS' })
-        console.info('Isins map up to date, all symbols should show correctly')
-        return
-      }
-
-      try {
-        dispatch({ type: 'PENDING' })
-
-        /**
-         * Since we're getting rate limited, chunk the retrieval of missing isins into mapping jobs
-         * Each mapping job is defined below, will fetch missing isins and return an isin map with the
-         * results from the openFigi Api
-         */
-        const chunked = chunk(missingIsinsArray, MAX_JOBS_PER_REQUEST)
-        const chunkedPromises = chunked.map((isinsArray: Array<string>) => async () => {
-          try {
-            const securitiesList = await getFirstSecurityFromIsinList(isinsArray)
-            const missingIsinsMap: IsinMap = {}
-
-            isinsArray.forEach((isin, idx) => {
-              if (!securitiesList[idx]) {
-                return
-              }
-
-              missingIsinsMap[isin] = securitiesList[idx]
-            })
-
-            return missingIsinsMap
-          } catch (e) {
-            console.error('Error while retrieving isins', e)
-            return {}
-          }
-        })
-
-        throttle(chunkedPromises, {
-          delay: DELAY_BETWEEN_REQUESTS_MS,
-          onNewResults: missingIsinMap => {
-            dispatch({ type: 'NEW_ISIN_DATA', payload: missingIsinMap })
-          },
-          onNewError: error => {
-            // new state for partial errors
-          },
-          onDone: () => {
-            dispatch({ type: 'SUCCESS' })
-          },
-        })
-      } catch (e) {
-        dispatch({ type: 'ERROR', error: e })
-        console.error(e)
-      }
+    if (!missingIsinsArray.length && !transactions.length) {
+      // Bailing out, nothing to do
+      return
     }
-    getMissingSecuritiesData()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [transactions.length])
+
+    if (!missingIsinsArray.length) {
+      dispatch({ type: 'SUCCESS' })
+      console.info('Isins map up to date, all symbols should show correctly')
+      return
+    }
+
+    dispatch({ type: 'PENDING' })
+    const isinsToRetrieve = chunk(missingIsinsArray, MAX_JOBS_PER_REQUEST)
+    const chunkedPromisesArray = isinsToRetrieve.map((isinsArray: Array<string>) => () =>
+      getIsinMapFromMissingIsins(isinsArray)
+    )
+    /**
+     * Since we're getting rate limited, chunk the retrieval of missing isins into mapping jobs
+     * Each mapping job is defined below, will fetch missing isins and return an isin map with the
+     * results from the openFigi Api
+     */
+    throttle(chunkedPromisesArray, {
+      delay: DELAY_BETWEEN_REQUESTS_MS,
+      onNewResults: missingIsinMap => {
+        dispatch({ type: 'NEW_ISIN_DATA', payload: missingIsinMap })
+      },
+      onDone: () => {
+        dispatch({ type: 'SUCCESS' })
+      },
+    })
+  }, [isinMap, transactions])
 
   useEffect(() => {
     saveLocalIsinMap(isinMap)
