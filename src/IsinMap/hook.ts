@@ -50,14 +50,8 @@ const saveLocalIsinMap = (isinMap: IsinMap) => {
   window.localStorage.setItem('degirocharts.isinmap', JSON.stringify(isinMap))
 }
 
-const getMissingSecuritiesIsins = (isinMap: IsinMap): string[] => {
-  return Object.entries(isinMap).reduce((missingSecuritiesIsins: string[], current) => {
-    let [isin, attachedSecurity] = current
-    if (attachedSecurity === null) {
-      return [...missingSecuritiesIsins, isin]
-    }
-    return missingSecuritiesIsins
-  }, [])
+const getMissingIsins = (isinMap: IsinMap): string[] => {
+  return Object.keys(isinMap).filter(isin => isinMap[isin] === null)
 }
 
 const fetchMissingIsins = async (missingIsinArray: string[]) => {
@@ -121,7 +115,7 @@ const UseIsinMap = (transactions: Transaction[]) => {
        * and new ones are added
        * TODO: Test this
        */
-      const missingIsinsArray = getMissingSecuritiesIsins({
+      const missingIsinsArray = getMissingIsins({
         ...getIsinMapFromTransactions(transactions),
         ...isinMap,
       })
