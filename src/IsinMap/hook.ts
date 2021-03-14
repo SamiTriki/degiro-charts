@@ -52,30 +52,6 @@ const getMissingIsins = (isinMap: IsinMap): string[] => {
   return Object.keys(isinMap).filter(isin => isinMap[isin] === null)
 }
 
-const fetchMissingIsins = async (missingIsinArray: string[]) => {
-  let figiresults: OpenFigiSecurity[]
-  try {
-    figiresults = await getFirstSecurityFromIsinList(missingIsinArray)
-  } catch (e) {
-    console.error('error while fetching missing securities', e)
-    return {}
-  }
-
-  // Go through the missing isins and find the associated security in the results, then generate an isin map from it
-  const missingIsinsMap = missingIsinArray.reduce(
-    (isinMap, isin, index: number): IsinMap => {
-      const security = figiresults[index] ? { ...figiresults[index], isin } : null
-      return {
-        ...isinMap,
-        [isin]: security || { message: 'could not find associated security', isin },
-      }
-    },
-    {} as IsinMap
-  )
-
-  return missingIsinsMap
-}
-
 type UseIsinMapState = {
   status: string
   isinMap: IsinMap
@@ -131,12 +107,34 @@ const UseIsinMap = (transactions: Transaction[]) => {
 
       try {
         dispatch({ type: 'PENDING' })
-        const chunked = chunk(missingIsinsArray, MAX_JOBS_PER_REQUEST)
-        const chunkedPromises = chunked.map((isinsArray: Array<string>) => () =>
-          fetchMissingIsins(isinsArray)
-        )
 
-        await throttle(chunkedPromises, {
+        /**
+         * Since we're getting rate limited, chunk the retrieval of missing isins into mapping jobs
+         * Each mapping job is defined below, will fetch missing isins and return an isin map with the
+         * results from the openFigi Api
+         */
+        const chunked = chunk(missingIsinsArray, MAX_JOBS_PER_REQUEST)
+        const chunkedPromises = chunked.map((isinsArray: Array<string>) => async () => {
+          try {
+            const securitiesList = await getFirstSecurityFromIsinList(isinsArray)
+            const missingIsinsMap: IsinMap = {}
+
+            isinsArray.forEach((isin, idx) => {
+              if (!securitiesList[idx]) {
+                return
+              }
+
+              missingIsinsMap[isin] = securitiesList[idx]
+            })
+
+            return missingIsinsMap
+          } catch (e) {
+            console.error('Error while retrieving isins', e)
+            return {}
+          }
+        })
+
+        throttle(chunkedPromises, {
           delay: DELAY_BETWEEN_REQUESTS_MS,
           onNewResults: missingIsinMap => {
             dispatch({ type: 'NEW_ISIN_DATA', payload: missingIsinMap })

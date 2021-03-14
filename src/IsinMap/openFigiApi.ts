@@ -29,6 +29,7 @@ export function getFirstSecurityFromIsinList(
   })
 }
 
+// Will return the first security returned by the openFigi api when doing an ISIN lookup
 export function getFirstSecurityFromIsin(isin: string): Promise<OpenFigiSecurity> {
   const requestBody = [{ idType: 'ID_ISIN', idValue: isin }]
 
