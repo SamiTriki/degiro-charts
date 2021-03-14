@@ -14,14 +14,18 @@ const MAX_JOBS_PER_REQUEST = 10
  * - Handle openfigi key and limits
  * - Add fetch wrapper if I repeat requests for other apis than openFigi
  */
+
 const getIsinMapFromTransactions = (transactions: Transaction[]) => {
-  return transactions.reduce((isinMap, t): IsinMap => {
-    if (t.isin) {
+  return transactions.reduce((isinMap, transaction): IsinMap => {
+    const { isin } = transaction
+
+    if (isin) {
       return {
         ...isinMap,
-        [t.isin]: null,
+        [isin]: null,
       }
     }
+
     return isinMap
   }, {} as IsinMap)
 }
