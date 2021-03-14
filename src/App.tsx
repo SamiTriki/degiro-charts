@@ -61,23 +61,18 @@ function App() {
       {isinMapStatus === 'pending' ? 'Loading new figi symbols' : null}
       {isinMapStatus === 'success' ? 'Figi symbols up to date' : null}
       {isinMapStatus === 'error' ? 'Error while loading figi symbols' : null}
-
-      {transactions.length ? (
-        <Switch>
-          <Route path="/traded-stocks">
-            <TradedSecurities transactions={transactions} isinMap={isinMap} />
-          </Route>
-          <Route path="/">
-            <Home
-              transactions={transactions}
-              setTransactions={setTransactions}
-              hideNilTransactions={hideNilTransactions}
-            />
-          </Route>
-        </Switch>
-      ) : (
-        <div className="container">Waiting for transactions</div>
-      )}
+      <Switch>
+        <Route path="/traded-stocks">
+          <TradedSecurities transactions={transactions} isinMap={isinMap} />
+        </Route>
+        <Route path="/">
+          <Home
+            transactions={transactions}
+            setTransactions={setTransactions}
+            hideNilTransactions={hideNilTransactions}
+          />
+        </Route>
+      </Switch>
     </Router>
   )
 }

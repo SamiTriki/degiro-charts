@@ -1,5 +1,4 @@
 import { UseIsinMap } from './hook'
-import { searchOpenFigi } from './openFigiApi'
-import { looksLikeOpenFigiSecurity } from './types'
+import { getFirstSecurityFromIsin } from './openFigiApi'
 
-export { UseIsinMap, searchOpenFigi, looksLikeOpenFigiSecurity }
+export { UseIsinMap, getFirstSecurityFromIsin }

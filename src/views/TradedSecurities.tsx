@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Transaction } from '../transactionUtils'
-import { searchOpenFigi } from '../IsinMap/openFigiApi'
+import { getFirstSecurityFromIsin } from '../IsinMap/openFigiApi'
 import { OpenFigiSecurity, IsinMap } from '../IsinMap/types'
 
 /**
@@ -55,7 +55,7 @@ export default function TradedSecurities({
   transactions,
   isinMap,
 }: TradedSecuritiesProps) {
-  const [searchResults, setSearchResults] = useState([] as OpenFigiSecurity[])
+  const [searchResults, setSearchResults] = useState(null as OpenFigiSecurity | null)
   const [fetchError, setFetchError] = useState(null as any)
   const [status, setStatus] = useState('idle')
 
@@ -75,10 +75,10 @@ export default function TradedSecurities({
   function onSelectSecurity(product: TradedSecurity): void {
     setStatus('pending')
 
-    searchOpenFigi(product.isin)
+    getFirstSecurityFromIsin(product.isin)
       .then(res => {
         setStatus('resolved')
-        if (res?.length) {
+        if (res) {
           return setSearchResults(res)
         }
       })
@@ -88,8 +88,8 @@ export default function TradedSecurities({
       })
   }
 
-  let results = searchResults?.length ? (
-    <pre>{JSON.stringify(searchResults[0], null, '  ')}</pre>
+  let results = searchResults ? (
+    <pre>{JSON.stringify(searchResults, null, '  ')}</pre>
   ) : (
     <pre>
       No results found on openFigi for that ISIN, what a bad luck (we might offer broader

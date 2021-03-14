@@ -16,11 +16,7 @@ interface HomeProps {
   hideNilTransactions: boolean
 }
 
-function Home({
-  setTransactions,
-  transactions,
-  hideNilTransactions,
-}: HomeProps) {
+function Home({ setTransactions, transactions, hideNilTransactions }: HomeProps) {
   const [csvParsingError, setCsvParsingError] = useState(false as any)
 
   const handleOnDrop = (results: any[]) => {
@@ -47,9 +43,7 @@ function Home({
           >
             <span>Drop CSV file here or click to upload.</span>
           </CSVReader>
-          <p style={{ color: 'red' }}>
-            {csvParsingError ? csvParsingError.message : ''}
-          </p>
+          <p style={{ color: 'red' }}>{csvParsingError ? csvParsingError.message : ''}</p>
         </div>
         <div className="square">
           <h2>Account summary</h2>

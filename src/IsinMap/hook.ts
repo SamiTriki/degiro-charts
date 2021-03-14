@@ -1,5 +1,5 @@
 import { useEffect, useCallback, useReducer, useRef } from 'react'
-import { getSecuritiesFromIsins } from './openFigiApi'
+import { getFirstSecurityFromIsinList } from './openFigiApi'
 import { Transaction } from './../transactionUtils'
 import { IsinMap, OpenFigiSecurity, looksLikeOpenFigiSecurity } from './types'
 import { chunk } from './chunk'
@@ -32,7 +32,7 @@ const getIsinMapFromTransactions = (transactions: Transaction[]) => {
   }, {} as IsinMap)
 }
 
-const getLocalIsinMap = () => {
+const getLocalStorageIsinMap = () => {
   let localIsinMap: IsinMap
   try {
     localIsinMap = JSON.parse(window.localStorage.getItem('degirocharts.isinmap') || '')
@@ -67,7 +67,7 @@ const getMissingSecuritiesIsins = (isinMap: IsinMap): string[] => {
 const fetchMissingIsins = async (missingIsinArray: string[]) => {
   let figiresults: OpenFigiSecurity[]
   try {
-    figiresults = await getSecuritiesFromIsins(missingIsinArray)
+    figiresults = await getFirstSecurityFromIsinList(missingIsinArray)
   } catch (e) {
     console.error('error while fetching missing securities', e)
     return {}
@@ -77,7 +77,6 @@ const fetchMissingIsins = async (missingIsinArray: string[]) => {
   const missingIsinsMap = missingIsinArray.reduce(
     (isinMap, isin, index: number): IsinMap => {
       const security = figiresults[index] ? { ...figiresults[index], isin } : null
-
       return {
         ...isinMap,
         [isin]: security || { message: 'could not find associated security', isin },
@@ -137,7 +136,7 @@ function isinMapReducer(prevState: UseIsinMapState, action: any) {
 const UseIsinMap = (transactions: Transaction[]) => {
   const [{ isinMap, status, newlyAddedIsin }, dispatch] = useReducer(isinMapReducer, {
     status: 'idle',
-    isinMap: { ...getIsinMapFromTransactions(transactions), ...getLocalIsinMap() },
+    isinMap: { ...getIsinMapFromTransactions(transactions), ...getLocalStorageIsinMap() },
     newlyAddedIsin: {},
   })
 
@@ -196,7 +195,7 @@ const UseIsinMap = (transactions: Transaction[]) => {
     }
     getMissingSecuritiesData()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [transactions])
+  }, [transactions.length])
 
   useEffect(() => {
     saveLocalIsinMap(isinMap)

@@ -13,6 +13,15 @@ export interface OpenFigiSecurity {
   isin?: string
 }
 
+export type OpenFigiResponseJSON = Array<{
+  data: Array<OpenFigiSecurity>
+}>
+
+export type OpenFigiMappingRequestBody = {
+  idType: string
+  idValue: string
+}
+
 export function looksLikeOpenFigiSecurity(object: any): object is OpenFigiSecurity {
   let expectedProps = [
     'name',

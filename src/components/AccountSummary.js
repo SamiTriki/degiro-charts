@@ -33,6 +33,9 @@ function getAccountSummaryInfo(transactions = []) {
 
       if (curr.type === 'sell') {
         d.totalTrades++
+        // buggy if history is not complete,
+        // if the user has has shares on the market before the history then sells them
+        // the result can be negative
         d.totalSharesOnMarket = d.totalSharesOnMarket - curr.shareCount
       }
 
