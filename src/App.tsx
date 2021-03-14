@@ -19,16 +19,7 @@ const getLocalTransactions = () => fetch('./Account.csv').then(res => res.text()
 function App() {
   const [transactions, setTransactions] = useState([] as Transaction[])
   const [hideNilTransactions] = useState(true)
-  const { isinMap, status: isinMapStatus, onNewIsinAdded } = UseIsinMap(transactions)
-
-  onNewIsinAdded(newlyAddedIsins =>
-    console.info(
-      'newly added isins',
-      Object.values(newlyAddedIsins).map(security => {
-        return security.name
-      })
-    )
-  )
+  const { isinMap, status: isinMapStatus } = UseIsinMap(transactions)
 
   useEffect(() => {
     async function setDefaultTransactions() {

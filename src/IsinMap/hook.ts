@@ -1,7 +1,7 @@
-import { useEffect, useCallback, useReducer, useRef } from 'react'
+import { useEffect, useReducer } from 'react'
 import { getFirstSecurityFromIsinList } from './openFigiApi'
 import { Transaction } from './../transactionUtils'
-import { IsinMap, OpenFigiSecurity, looksLikeOpenFigiSecurity } from './types'
+import { IsinMap, OpenFigiSecurity } from './types'
 import { chunk } from './chunk'
 import { throttle } from './throttle'
 
@@ -50,10 +50,6 @@ const saveLocalIsinMap = (isinMap: IsinMap) => {
   window.localStorage.setItem('degirocharts.isinmap', JSON.stringify(isinMap))
 }
 
-const deleteLocalIsinMap = () => {
-  window.localStorage.removeItem('degirocharts.isinmap')
-}
-
 const getMissingSecuritiesIsins = (isinMap: IsinMap): string[] => {
   return Object.entries(isinMap).reduce((missingSecuritiesIsins: string[], current) => {
     let [isin, attachedSecurity] = current
@@ -88,29 +84,9 @@ const fetchMissingIsins = async (missingIsinArray: string[]) => {
   return missingIsinsMap
 }
 
-// Is this overkill? Probably, toying with typeguards
-// This function cleans out null props or errors from the newly added isin to provide only cleanly added
-// securities to the callback
-// needs more thinking, we might want to display errors at some point, but this is good to know I can do this
-const FilterMissingAndErrorIsins = (
-  isinMap: IsinMap
-): Record<string, OpenFigiSecurity> => {
-  return Object.entries(isinMap).reduce((filteredIsinMap, [isin, security]) => {
-    if (looksLikeOpenFigiSecurity(security)) {
-      return {
-        ...filteredIsinMap,
-        [isin]: security,
-      }
-    } else {
-      return filteredIsinMap
-    }
-  }, {} as Record<string, OpenFigiSecurity>)
-}
-
 type UseIsinMapState = {
   status: string
   isinMap: IsinMap
-  newlyAddedIsin: IsinMap
 }
 
 function isinMapReducer(prevState: UseIsinMapState, action: any) {
@@ -124,7 +100,6 @@ function isinMapReducer(prevState: UseIsinMapState, action: any) {
     case 'NEW_ISIN_DATA':
       return {
         ...prevState,
-        newlyAddedIsin: action.payload,
         isinMap: { ...prevState.isinMap, ...action.payload },
       }
     default:
@@ -134,13 +109,10 @@ function isinMapReducer(prevState: UseIsinMapState, action: any) {
 
 // actions: new isins, isins complete, isin fetching errors,
 const UseIsinMap = (transactions: Transaction[]) => {
-  const [{ isinMap, status, newlyAddedIsin }, dispatch] = useReducer(isinMapReducer, {
+  const [{ isinMap, status }, dispatch] = useReducer(isinMapReducer, {
     status: 'idle',
     isinMap: { ...getIsinMapFromTransactions(transactions), ...getLocalStorageIsinMap() },
-    newlyAddedIsin: {},
   })
-
-  const newlyAddedIsinRef = useRef(newlyAddedIsin)
 
   useEffect(() => {
     async function getMissingSecuritiesData() {
@@ -174,12 +146,6 @@ const UseIsinMap = (transactions: Transaction[]) => {
           delay: DELAY_BETWEEN_REQUESTS_MS,
           onNewResults: missingIsinMap => {
             dispatch({ type: 'NEW_ISIN_DATA', payload: missingIsinMap })
-            /**
-             * When any action is dispatched, the state changes and the value of newlyAddedIsin is not the same reference
-             * which re triggers the onNewIsinAdded callback.
-             * Keep the newly added isin as a ref to compare them before executing the callback
-             * */
-            newlyAddedIsinRef.current = missingIsinMap
           },
           onNewError: error => {
             // new state for partial errors
@@ -201,21 +167,7 @@ const UseIsinMap = (transactions: Transaction[]) => {
     saveLocalIsinMap(isinMap)
   }, [isinMap])
 
-  const onNewIsinAdded = useCallback(
-    (cb: (newlyAddedIsin: Record<string, OpenFigiSecurity>) => void) => {
-      if (newlyAddedIsinRef.current === newlyAddedIsin) {
-        return
-      }
-
-      if (Object.entries(newlyAddedIsin).length) {
-        const filteredIsinMap = FilterMissingAndErrorIsins(newlyAddedIsin)
-        cb(filteredIsinMap)
-      }
-    },
-    [newlyAddedIsin]
-  )
-
-  return { isinMap, status, onNewIsinAdded }
+  return { isinMap, status }
 }
 
 export { UseIsinMap }
